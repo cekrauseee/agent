@@ -1,4 +1,4 @@
-import type { Effort, Model, Preferences } from '../../models'
+import type { Effort, Model, Preferences } from '@agent/backend/models'
 export type { Effort, Model, Preferences }
 export type GenerationStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 export type Citation = {
