@@ -7,15 +7,12 @@ A Next.js backend for Google-authenticated conversations, durable OpenAI generat
 Install Node.js 24 LTS, pnpm 11.10.0 and Docker Compose. Clone the repository, then:
 
 ```sh
-pnpm install --frozen-lockfile
-cp .env.example .env
-# Fill the existing Google OAuth credentials, Better Auth secret and OpenAI key.
-docker compose up --build --detach --wait postgres app
-docker compose run --rm app pnpm db:migrate
-docker compose up --detach --wait worker
+pnpm setup
 ```
 
-The app is at `http://localhost:3000`; PostgreSQL is available on localhost:5432. Configure Google's callback as `http://localhost:3000/api/auth/callback/google`. Set `BETTER_AUTH_SECRET` to a random value of at least 32 characters. Set `APP_PORT`, `POSTGRES_PORT`, `BETTER_AUTH_URL` and Google's callback consistently when changing ports. Compose forces the local PostgreSQL driver and container database URL. Env files are ignored and excluded from images; credentials are runtime inputs. Builds and `/api/health` need no service secrets.
+Setup installs locked dependencies, upserts `.env` from `.env.example`, builds the containers, starts PostgreSQL, applies migrations and starts the app/worker. If this project's containers or data already exist, press Enter to reuse them; type `fresh start` only to authorize deleting the project's local PostgreSQL data. Existing values are preserved, missing local defaults/session secret are generated, and obsolete keys are removed. Existing published ports are reused when their env values are missing. See [setup details](docs/runtime.md#setup-script).
+
+The defaults are `http://localhost:3000` for the app and localhost:5432 for PostgreSQL. Fill existing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `OPENAI_API_KEY` credentials in `.env`; setup leaves missing external credentials blank and reports their names. Rerun `pnpm setup` and choose reuse after changes. Configure Google's callback as `http://localhost:3000/api/auth/callback/google`, adjusted to your app port. Keep `APP_PORT`, `POSTGRES_PORT`, `BETTER_AUTH_URL`, the host `DATABASE_URL` and Google's callback consistent. Compose forces the local PostgreSQL driver/container URL. Env files are ignored and excluded from images. Builds and `/api/health` need no service secrets.
 
 The worker must run for admitted generations to progress. Missing OpenAI configuration leaves them pending; no development login bypass is provided. The database volume survives `docker compose down`; adding `--volumes` destroys its data. Apply migrations before starting the worker or accepting API traffic. See [runtime setup](docs/runtime.md) for host development and [authentication](docs/auth.md) for Google/session configuration.
 
