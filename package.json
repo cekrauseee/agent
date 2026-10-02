@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "dev": "next dev",
     "worker": "node --conditions=react-server --import tsx lib/agent/run-worker.ts",
     "build": "next build",
