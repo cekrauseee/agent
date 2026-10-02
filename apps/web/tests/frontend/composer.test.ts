@@ -67,9 +67,11 @@ test('recovery blocks sending and the recording slot replaces the only text form
   )
   assert.match(recovery, /aria-label="Send message"[^>]*disabled/)
   assert.match(recovery, /Retry the last response or edit the last message/)
+  assert.doesNotMatch(recovery, /role="status" hidden=""/)
   const recording = renderToStaticMarkup(
     createElement(TextComposer, { ...props, recording: createElement('span', null, 'Recording') }),
   )
   assert.match(recording, /Recording/)
+  assert.match(recording, /role="status" hidden=""/)
   assert.doesNotMatch(recording, /<textarea|aria-label="Send message"/)
 })

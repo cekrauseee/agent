@@ -225,7 +225,7 @@ export function TextComposer({
               </>
             )}
           </InputGroup>
-          <FieldDescription id={`${id}-status`} role='status'>
+          <FieldDescription id={`${id}-status`} role='status' hidden={!!recording}>
             {needsRecovery
               ? 'Retry the last response or edit the last message before sending another.'
               : admissionPending
