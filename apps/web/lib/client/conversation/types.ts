@@ -68,6 +68,7 @@ export type ConversationState = {
   initialize: () => Promise<void>
   signIn: () => Promise<void>
   logout: () => Promise<void>
+  expireSession: () => void
   selectConversation: (id: string | null) => Promise<void>
   refreshConversations: () => Promise<void>
   setDraft: (text: string) => void
@@ -76,6 +77,7 @@ export type ConversationState = {
   replaceMessage: (messageId: string, text: string) => Promise<Submission | null>
   retryGeneration: () => Promise<Submission | null>
   cancelResponse: () => Promise<void>
+  transcribeRecording: (audio: Blob, filename: string, signal?: AbortSignal) => Promise<string>
   clearActionError: () => void
   dispose: () => void
 }
