@@ -198,7 +198,10 @@ export function TextComposer({
                         variant='outline'
                         size='sm'
                         disabled={cancelPending}
-                        onClick={() => void onCancelResponse()}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          void onCancelResponse()
+                        }}
                       >
                         {cancelPending ? (
                           <Spinner data-icon='inline-start' />

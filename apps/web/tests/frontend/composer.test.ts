@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { TextComposer, type TextComposerProps } from '../../components/conversation/text-composer'
 import {
   insertTranscript,
   isSubmitKey,
@@ -30,4 +33,43 @@ test('transcription uses the recorded selection and leaves the draft intact on e
     'hello world!',
   )
   assert.equal(insertTranscript({ ...draft, selectionStart: -1, selectionEnd: 99 }, 'new'), 'new')
+})
+
+const props: TextComposerProps = {
+  value: 'next draft',
+  onValueChange: () => {},
+  preferences: { model: 'gpt-6-luna', effort: 'medium' },
+  catalog: [{ id: 'gpt-6-luna', name: 'Luna', efforts: ['low', 'medium'] }],
+  onEffortChange: async () => {},
+  canSubmit: true,
+  admissionPending: false,
+  preferencePending: false,
+  generationActive: false,
+  cancelPending: false,
+  needsRecovery: false,
+  onSubmit: async () => null,
+  onCancelResponse: async () => {},
+}
+
+test('active response has an explicit non-submit cancellation and preserves an editable draft', () => {
+  const html = renderToStaticMarkup(
+    createElement(TextComposer, { ...props, canSubmit: false, generationActive: true }),
+  )
+  assert.match(html, /<textarea[^>]*>next draft<\/textarea>/)
+  assert.match(html, /type="button"[^>]*>.*Cancel response/)
+  assert.doesNotMatch(html, /aria-label="Send message"/)
+  assert.doesNotMatch(html, /<textarea[^>]* disabled=""/)
+})
+
+test('recovery blocks sending and the recording slot replaces the only text form', () => {
+  const recovery = renderToStaticMarkup(
+    createElement(TextComposer, { ...props, canSubmit: false, needsRecovery: true }),
+  )
+  assert.match(recovery, /aria-label="Send message"[^>]*disabled/)
+  assert.match(recovery, /Retry the last response or edit the last message/)
+  const recording = renderToStaticMarkup(
+    createElement(TextComposer, { ...props, recording: createElement('span', null, 'Recording') }),
+  )
+  assert.match(recording, /Recording/)
+  assert.doesNotMatch(recording, /<textarea|aria-label="Send message"/)
 })
