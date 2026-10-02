@@ -37,7 +37,7 @@ The database checks need a local administrative connection able to create/drop t
 ## Developer documentation
 
 - [Architecture and schema](docs/architecture.md): ownership, transaction boundaries, durable jobs and deletion.
-- [API guide](docs/api.md): endpoint map, authentication, examples and shared errors.
+- [API reference](docs/api.md): each endpoint's purpose, request bodies, query parameters, response objects, status codes and SSE events.
 - [Runtime](docs/runtime.md) and [database](docs/database.md): configuration, Compose, migrations and connection lifecycle.
 - [Authentication and models](docs/auth.md): Google profiles, sessions, model/effort catalog and defaults.
 - [Projects and history](docs/organization.md), [conversation execution](docs/conversations.md), [private pages](docs/spaces.md) and [transcription](docs/transcription.md): payloads, limits, SSE/reload, editing and failure contracts.
