@@ -1,0 +1,9 @@
+.git
+.next
+node_modules
+.env*
+*.pem
+*.key
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
