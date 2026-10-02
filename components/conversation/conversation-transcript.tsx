@@ -105,10 +105,14 @@ function Transcript({ conversationId, submission, rows, className }: TranscriptP
     <MessageScroller className={className}>
       <MessageScrollerViewport
         ref={viewport}
-        className='[overflow-anchor:none]'
         onWheel={markIntent}
         onTouchMove={markIntent}
-        onPointerDown={markIntent}
+        onPointerDown={(event) => {
+          if (event.target === event.currentTarget) markIntent()
+        }}
+        onScrollEnd={() => {
+          userIntent.current = false
+        }}
         onKeyDown={(event) => {
           if (
             ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)
@@ -154,7 +158,7 @@ function Transcript({ conversationId, submission, rows, className }: TranscriptP
             aria-hidden='true'
             data-turn-spacer=''
             hidden
-            className='[content-visibility:visible]'
+            className='[content-visibility:visible] [overflow-anchor:none]'
           />
         </MessageScrollerContent>
       </MessageScrollerViewport>
