@@ -6,11 +6,11 @@ services:
       POSTGRES_PASSWORD: agent-local
       POSTGRES_DB: agent
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent -d agent"]
+      test: ['CMD-SHELL', 'pg_isready -U agent -d agent']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -25,12 +25,18 @@ services:
       DATABASE_URL: postgresql://agent:agent-local@postgres:5432/agent
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
     ports:
-      - "127.0.0.1:${APP_PORT:-3000}:3000"
+      - '127.0.0.1:${APP_PORT:-3000}:3000'
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -38,7 +44,7 @@ services:
   worker:
     image: agent-backend:local
     build: .
-    command: ["pnpm", "worker"]
+    command: ['pnpm', 'worker']
     restart: unless-stopped
     env_file:
       - path: .env

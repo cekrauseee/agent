@@ -1,19 +1,34 @@
-import { setTimeout } from "node:timers/promises";
-import { createDatabase } from "../db";
-import { getOpenAI } from "../server/openai";
-import { reconcile } from "./worker";
+import { setTimeout } from 'node:timers/promises'
+import { createDatabase } from '../db'
+import { getOpenAI } from '../server/openai'
+import { reconcile } from './worker'
 
-const connection = createDatabase();
-let stopping = false;
-process.on("SIGTERM", () => { stopping = true; });
-process.on("SIGINT", () => { stopping = true; });
+const connection = createDatabase()
+let stopping = false
+process.on('SIGTERM', () => {
+  stopping = true
+})
+process.on('SIGINT', () => {
+  stopping = true
+})
 async function main() {
   try {
     while (!stopping) {
-      try { await reconcile(getOpenAI(), connection.db); }
-      catch (error) { console.error("Generation worker unavailable", error instanceof Error ? error.name : "UnknownError"); }
-      await setTimeout(2000);
+      try {
+        await reconcile(getOpenAI(), connection.db)
+      } catch (error) {
+        console.error(
+          'Generation worker unavailable',
+          error instanceof Error ? error.name : 'UnknownError',
+        )
+      }
+      await setTimeout(2000)
     }
-  } finally { await connection.close(); }
+  } finally {
+    await connection.close()
+  }
 }
-main().catch(() => { console.error("Generation worker stopped"); process.exitCode = 1; });
+main().catch(() => {
+  console.error('Generation worker stopped')
+  process.exitCode = 1
+})
