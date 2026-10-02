@@ -249,10 +249,15 @@ export function createConversationStore(options: Options = {}) {
       if (!id && !keepDraft) homeConversationId = null
       set({
         conversationId: id,
-        conversation: null,
-        messages: [],
-        generation: null,
-        lastEditableUserMessageId: null,
+        // Same-route reconciliation keeps stable rows mounted, including an unsaved edit buffer.
+        ...(keepDraft && get().conversation?.id === id
+          ? {}
+          : {
+              conversation: null,
+              messages: [],
+              generation: null,
+              lastEditableUserMessageId: null,
+            }),
         historyLoading: !!id,
         historyError: null,
         transportError: null,
@@ -448,11 +453,13 @@ export function createConversationStore(options: Options = {}) {
       } catch (error) {
         if (controller.signal.aborted || sessionAtStart !== sessionVersion) return null
         if (requestedRoute === routeAtStart && routeVersion === version) {
+          let errorVersion = version
           if (error instanceof ConversationApiError && error.status === 409 && id) {
             if (routeAtStart === id) {
               const draft = get().draft
               const reload = selectConversation(id)
               const reloadVersion = routeVersion
+              errorVersion = reloadVersion
               await reload
               if (requestedRoute === id && routeVersion === reloadVersion) set({ draft })
             } else {
@@ -470,7 +477,12 @@ export function createConversationStore(options: Options = {}) {
               }
             }
           }
-          if (sessionAtStart === sessionVersion) fail(error, 'actionError')
+          if (
+            sessionAtStart === sessionVersion &&
+            requestedRoute === routeAtStart &&
+            routeVersion === errorVersion
+          )
+            fail(error, 'actionError')
         } else if (error instanceof ConversationApiError && error.status === 401)
           fail(error, 'actionError')
         return null

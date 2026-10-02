@@ -790,3 +790,83 @@ test('New Conversation invalidates a pending Home draft and prevents late creati
   )
   env.store.getState().dispose()
 })
+
+test('same-route 409 reconciliation never removes the edited row or latest identity while loading canonical history', async () => {
+  const env = backend()
+  env.generation = assistant('cancelled')
+  env.rows = [userMessage(), env.generation]
+  await env.store.getState().initialize()
+  await env.store.getState().selectConversation(id)
+  env.store.getState().setDraft('Unrelated composer draft')
+  const states: { ids: string[]; editable: string | null; conversation: string | null }[] = []
+  const unsubscribe = env.store.subscribe((state) =>
+    states.push({
+      ids: state.messages.map((row) => row.id),
+      editable: state.lastEditableUserMessageId,
+      conversation: state.conversation?.id ?? null,
+    }),
+  )
+  const reload = deferred<Response>()
+  env.intercept = (path, init) => {
+    if (init.method === 'PATCH') return json({ error: 'Replacement rejected' }, 409)
+    if (path === `/api/conversations/${id}`) return reload.promise
+    return null
+  }
+  const replacement = env.store.getState().replaceMessage('user-0', 'Preserve this edit buffer')
+  await until(
+    () => env.calls.filter((call) => call.path === `/api/conversations/${id}`).length === 2,
+  )
+  assert.deepEqual(
+    env.store.getState().messages.map((row) => row.id),
+    env.rows.map((row) => row.id),
+  )
+  assert.equal(env.store.getState().lastEditableUserMessageId, 'user-0')
+  reload.resolve(
+    json({
+      ...conversation(),
+      currentGeneration: env.generation,
+      lastEditableUserMessageId: 'user-0',
+    }),
+  )
+  assert.equal(await replacement, null)
+  assert.equal(env.store.getState().actionError?.status, 409)
+  assert.equal(env.store.getState().draft, 'Unrelated composer draft')
+  assert.equal(selectCanEdit(env.store.getState()), true)
+  assert.equal(
+    states.every(
+      (state) =>
+        state.ids.includes('user-0') && state.editable === 'user-0' && state.conversation === id,
+    ),
+    true,
+  )
+  unsubscribe()
+  env.store.getState().dispose()
+})
+
+test('a 409 reconciliation abandoned for another route cannot publish old history or action errors', async () => {
+  const env = backend()
+  await env.store.getState().initialize()
+  await env.store.getState().selectConversation(id)
+  const reload = deferred<Response>()
+  env.intercept = (path, init) => {
+    if (init.method === 'PATCH') return json({ error: 'Old route rejection' }, 409)
+    if (path === `/api/conversations/${id}`) return reload.promise
+    return null
+  }
+  const replacement = env.store.getState().replaceMessage('user-0', 'Old route edit')
+  await until(
+    () => env.calls.filter((call) => call.path === `/api/conversations/${id}`).length === 2,
+  )
+  await env.store.getState().selectConversation(other)
+  reload.resolve(
+    json({
+      ...conversation(),
+      currentGeneration: env.generation,
+      lastEditableUserMessageId: 'user-0',
+    }),
+  )
+  assert.equal(await replacement, null)
+  assert.equal(env.store.getState().conversation?.id, other)
+  assert.equal(env.store.getState().actionError, null)
+  env.store.getState().dispose()
+})
