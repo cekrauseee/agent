@@ -86,6 +86,7 @@ export function createConversationStore(options: Options = {}) {
   let sessionVersion = 0
   let listVersion = 0
   let homeConversationId: string | null = null
+  let pendingSubmission: Submission | null = null
   let recovery: { ownerId: string; draft: string; routeId: string | null } | null = null
   const requests = new Map<string, { key: string; requestId: string }>()
   const uuid = options.uuid ?? (() => crypto.randomUUID())
@@ -104,6 +105,7 @@ export function createConversationStore(options: Options = {}) {
       listVersion++
       requests.clear()
       homeConversationId = null
+      pendingSubmission = null
       if (clearRecovery) recovery = null
       set({ ...empty(), sessionStatus: status })
     }
@@ -246,6 +248,12 @@ export function createConversationStore(options: Options = {}) {
       const controller = (route = new AbortController())
       const keepDraft = get().conversationId === id
       const submission = get().submission
+      if (
+        pendingSubmission &&
+        id !== pendingSubmission.conversationId &&
+        (id !== null || get().conversationId !== null)
+      )
+        pendingSubmission = null
       if (!id && !keepDraft) homeConversationId = null
       set({
         conversationId: id,
@@ -295,7 +303,23 @@ export function createConversationStore(options: Options = {}) {
         const unique = Array.from(
           new Map(messages.map((message) => [message.id, message])).values(),
         )
+        const candidate =
+          pendingSubmission?.conversationId === id ? pendingSubmission : get().submission
+        const canonicalSubmission =
+          candidate?.conversationId === id &&
+          candidate.generationId === generation?.generationId &&
+          unique.some(
+            (message) => message.id === candidate.userMessageId && message.role === 'user',
+          ) &&
+          unique.some(
+            (message) =>
+              message.id === generation.id && message.generationId === candidate.generationId,
+          )
+            ? candidate
+            : null
+        if (canonicalSubmission === pendingSubmission) pendingSubmission = null
         set({
+          submission: canonicalSubmission,
           conversation: metadata,
           messages: generation
             ? unique.map((message) => (message.id === generation.id ? generation : message))
@@ -433,23 +457,27 @@ export function createConversationStore(options: Options = {}) {
           generationId: admission.generation.generationId!,
         }
         const stillSelected = routeVersion === version && requestedRoute === routeAtStart
+        let acceptanceVersion = version
         if (stillSelected) {
-          // Canonical history is loaded by route selection; only the acceptance identity is optimistic.
-          set({
-            submission: accepted,
-            ...(kind === 'send' && get().draft === submittedText ? { draft: '' } : {}),
-          })
+          // Publish the lifecycle with its canonical rows/snapshot, never with the previous answer.
+          pendingSubmission = accepted
+          if (kind === 'send' && get().draft === submittedText) set({ draft: '' })
           if (routeAtStart === id) {
             const draft = get().draft
             const reload = selectConversation(id)
             const reloadVersion = routeVersion
+            acceptanceVersion = reloadVersion
             await reload
-            if (requestedRoute === id && routeVersion === reloadVersion)
-              set({ submission: accepted, draft })
+            if (requestedRoute === id && routeVersion === reloadVersion) set({ draft })
           }
         }
         void refreshConversations()
-        return stillSelected ? accepted : null
+        return stillSelected &&
+          sessionAtStart === sessionVersion &&
+          requestedRoute === routeAtStart &&
+          routeVersion === acceptanceVersion
+          ? accepted
+          : null
       } catch (error) {
         if (controller.signal.aborted || sessionAtStart !== sessionVersion) return null
         if (requestedRoute === routeAtStart && routeVersion === version) {
@@ -553,6 +581,7 @@ export function createConversationStore(options: Options = {}) {
         stream.abort()
         if (homeConversationId) requests.delete(homeConversationId)
         homeConversationId = null
+        pendingSubmission = null
         recovery = null
         set({ draft: '', actionError: null, submission: null })
       },

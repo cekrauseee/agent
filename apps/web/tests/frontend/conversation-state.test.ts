@@ -870,3 +870,134 @@ test('a 409 reconciliation abandoned for another route cannot publish old histor
   assert.equal(env.store.getState().actionError, null)
   env.store.getState().dispose()
 })
+
+test('replacement publishes its scrolling identity only with the matching canonical user and new generation', async () => {
+  const env = backend()
+  env.generation = { ...assistant(), text: 'Long old response\n'.repeat(100) }
+  env.rows = [userMessage(), env.generation]
+  await env.store.getState().initialize()
+  await env.store.getState().selectConversation(id)
+  const publications: {
+    generation: string | null | undefined
+    userText: string | undefined
+    assistant: string | null | undefined
+  }[] = []
+  const unsubscribe = env.store.subscribe((state) => {
+    if (state.submission?.generationId === nextGenerationId)
+      publications.push({
+        generation: state.generation?.generationId,
+        userText: state.messages.find((row) => row.id === 'user-0')?.text,
+        assistant: state.messages.find((row) => row.role === 'assistant')?.generationId,
+      })
+  })
+  const reload = deferred<Response>()
+  env.intercept = (path) => (path === `/api/conversations/${id}` ? reload.promise : null)
+  const replacement = env.store.getState().replaceMessage('user-0', 'Short replacement')
+  await until(
+    () => env.calls.filter((call) => call.path === `/api/conversations/${id}`).length === 2,
+  )
+  assert.notEqual(env.store.getState().submission?.generationId, nextGenerationId)
+  assert.equal(env.store.getState().generation?.generationId, generationId)
+  assert.equal(env.store.getState().messages[0].text, 'User 0')
+  reload.resolve(
+    json({
+      ...conversation(),
+      currentGeneration: env.generation,
+      lastEditableUserMessageId: 'user-0',
+    }),
+  )
+  const accepted = await replacement
+  assert.equal(accepted?.generationId, nextGenerationId)
+  assert.equal(publications.length > 0, true)
+  assert.equal(
+    publications.every(
+      (value) =>
+        value.generation === nextGenerationId &&
+        value.assistant === nextGenerationId &&
+        value.userText === 'Short replacement',
+    ),
+    true,
+  )
+  unsubscribe()
+  env.store.getState().dispose()
+})
+
+test('Home, existing-conversation sends and retry announce only canonical admission identities', async () => {
+  for (const mode of ['home', 'send', 'retry'] as const) {
+    const env = backend()
+    if (mode === 'home') {
+      env.rows = []
+      env.generation = null
+    }
+    if (mode === 'retry') {
+      env.generation = assistant('failed')
+      env.rows = [userMessage(), env.generation]
+    }
+    await env.store.getState().initialize()
+    if (mode !== 'home') await env.store.getState().selectConversation(id)
+    const publications: boolean[] = []
+    const unsubscribe = env.store.subscribe((state) => {
+      if (state.submission)
+        publications.push(
+          state.generation?.generationId === state.submission.generationId &&
+            state.messages.some(
+              (row) => row.role === 'user' && row.id === state.submission!.userMessageId,
+            ) &&
+            state.messages.some(
+              (row) =>
+                row.role === 'assistant' && row.generationId === state.submission!.generationId,
+            ),
+        )
+    })
+    const accepted =
+      mode === 'retry'
+        ? await env.store.getState().retryGeneration()
+        : await env.store.getState().submit('New canonical turn')
+    assert.equal(accepted?.generationId, nextGenerationId)
+    if (mode === 'home') {
+      assert.equal(
+        env.store.getState().submission,
+        null,
+        'Home returns navigation IDs before publishing a scroll lifecycle',
+      )
+      await env.store.getState().selectConversation(id)
+    }
+    assert.deepEqual(env.store.getState().submission, accepted)
+    assert.equal(publications.length > 0, true)
+    assert.equal(publications.every(Boolean), true, mode)
+    unsubscribe()
+    env.store.getState().dispose()
+  }
+})
+
+test('abandoning canonical admission reload cannot announce a lifecycle or redirect the new route', async () => {
+  const env = backend()
+  await env.store.getState().initialize()
+  await env.store.getState().selectConversation(id)
+  const reload = deferred<Response>()
+  env.intercept = (path) => (path === `/api/conversations/${id}` ? reload.promise : null)
+  const replacement = env.store
+    .getState()
+    .replaceMessage('user-0', 'Accepted old route replacement')
+  await until(
+    () => env.calls.filter((call) => call.path === `/api/conversations/${id}`).length === 2,
+  )
+  await env.store.getState().selectConversation(other)
+  reload.resolve(
+    json({
+      ...conversation(),
+      currentGeneration: env.generation,
+      lastEditableUserMessageId: 'user-0',
+    }),
+  )
+  assert.equal(await replacement, null)
+  assert.equal(env.store.getState().conversation?.id, other)
+  assert.equal(env.store.getState().submission, null)
+  await env.store.getState().selectConversation(id)
+  assert.equal(
+    env.store.getState().submission,
+    null,
+    'Returning is a history load, not the abandoned admission lifecycle',
+  )
+  env.store.getState().dispose()
+})
