@@ -126,7 +126,14 @@
     },
     delta(id, delta) {
       const { conversation, generation } = generationFor(id)
-      generation.status = 'running'
+      if (generation.status === 'pending') {
+        generation.status = 'running'
+        publish(conversation, generation, 'status', {
+          messageId: generation.id,
+          generationId: id,
+          status: 'running',
+        })
+      }
       generation.text += delta
       generation.streamCursor++
       publish(conversation, generation, 'text_delta', {

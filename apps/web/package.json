@@ -10,8 +10,9 @@
     "lint": "eslint --max-warnings 0 .",
     "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
     "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
-    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
-    "setup": "agent-env"
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts && pnpm test:frontend",
+    "setup": "agent-env",
+    "test:frontend": "node --import tsx --test tests/frontend/*.test.ts"
   },
   "dependencies": {
     "@agent/backend": "workspace:*",

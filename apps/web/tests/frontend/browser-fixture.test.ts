@@ -53,6 +53,7 @@ test('browser fixture isolates API, preserves replacement identity, and streams 
   fixture.delta(generationId, 'Partial')
   fixture.complete(generationId, 'Canonical answer')
   const events = await stream.text()
+  assert.match(events, /event: status/)
   assert.match(events, /event: text_delta/)
   assert.match(events, /event: completed/)
   assert.match(events, /Canonical answer/)

@@ -235,7 +235,7 @@ function HomeNavigation({
                       render={
                         <Link
                           href='/'
-                          ref={(element) => {
+                          ref={(element: HTMLAnchorElement | null) => {
                             homeRef.current = element
                           }}
                         />

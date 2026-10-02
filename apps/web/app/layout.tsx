@@ -16,7 +16,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: 'Agent',
-  description: 'Conversations, projects, private Markdown pages, generation and transcription.',
+  description: 'Conversations with text and voice transcription.',
 }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
