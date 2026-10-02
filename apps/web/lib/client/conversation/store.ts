@@ -388,7 +388,8 @@ export function createConversationStore(options: Options = {}) {
             {},
           )
           if (sessionAtStart !== sessionVersion) return null
-          id = homeConversationId = created.id
+          id = created.id
+          if (routeVersion === version && requestedRoute === routeAtStart) homeConversationId = id
           set({ conversations: [...get().conversations, created] })
         }
         const key = JSON.stringify({
@@ -533,6 +534,16 @@ export function createConversationStore(options: Options = {}) {
       selectConversation,
       refreshConversations,
       setDraft: (draft) => set({ draft }),
+      startNewConversation() {
+        // The caller navigates to Home; this clears even when its URL is already selected.
+        routeVersion++
+        route.abort()
+        stream.abort()
+        if (homeConversationId) requests.delete(homeConversationId)
+        homeConversationId = null
+        recovery = null
+        set({ draft: '', actionError: null, submission: null })
+      },
       async setEffort(effort: Effort) {
         const state = get()
         if (!state.preferences || state.preferencePending || state.admissionPending) return

@@ -72,6 +72,7 @@ export type ConversationState = {
   selectConversation: (id: string | null) => Promise<void>
   refreshConversations: () => Promise<void>
   setDraft: (text: string) => void
+  startNewConversation: () => void
   setEffort: (effort: Effort) => Promise<void>
   submit: (text?: string) => Promise<Submission | null>
   replaceMessage: (messageId: string, text: string) => Promise<Submission | null>

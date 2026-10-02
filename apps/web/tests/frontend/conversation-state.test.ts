@@ -734,3 +734,59 @@ test('uncertain latest PATCH retains UUID/body and discarded-generation events c
   assert.equal(env.store.getState().messages[1].text, 'New canonical response')
   env.store.getState().dispose()
 })
+
+test('New Conversation already on Home clears draft and failed creation identity without selecting a route', async () => {
+  const env = backend()
+  env.rows = []
+  env.generation = null
+  await env.store.getState().initialize()
+  env.intercept = (path, init) =>
+    path.endsWith('/messages') && init.method === 'POST'
+      ? json({ error: 'Limit reached' }, 429)
+      : null
+  await env.store.getState().submit('First home draft')
+  const firstRequest = env.calls.find((call) => call.path.endsWith('/messages'))!.body!.requestId
+  env.store.getState().startNewConversation()
+  assert.equal(env.store.getState().conversationId, null)
+  assert.equal(env.store.getState().draft, '')
+  assert.equal(env.store.getState().actionError, null)
+  await env.store.getState().submit('First home draft')
+  assert.equal(
+    env.calls.filter((call) => call.path === '/api/conversations' && call.method === 'POST').length,
+    2,
+  )
+  assert.notEqual(
+    env.calls.filter((call) => call.path.endsWith('/messages')).at(-1)!.body!.requestId,
+    firstRequest,
+  )
+  env.store.getState().dispose()
+})
+
+test('New Conversation invalidates a pending Home draft and prevents late creation/admission from redirecting or being reused', async () => {
+  const env = backend()
+  env.rows = []
+  env.generation = null
+  await env.store.getState().initialize()
+  const creation = deferred<Response>()
+  let first = true
+  env.intercept = (path, init) => {
+    if (path === '/api/conversations' && init.method === 'POST' && first) {
+      first = false
+      return creation.promise
+    }
+    return null
+  }
+  const pending = env.store.getState().submit('Old pending draft')
+  env.store.getState().startNewConversation()
+  creation.resolve(json(conversation(), 201))
+  assert.equal(await pending, null)
+  assert.equal(env.store.getState().draft, '')
+  assert.equal(env.store.getState().submission, null)
+  assert.equal(env.store.getState().conversationId, null)
+  await env.store.getState().submit('New draft')
+  assert.equal(
+    env.calls.filter((call) => call.path === '/api/conversations' && call.method === 'POST').length,
+    2,
+  )
+  env.store.getState().dispose()
+})
