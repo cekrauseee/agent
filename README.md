@@ -1,7 +1,7 @@
 # Agent workspace
 
-A pnpm/Turborepo workspace. Each project owns its source, tests, documentation, scripts,
-configuration consumers and environment. Root files coordinate the workspace only.
+A pnpm/Turborepo workspace. The root owns workspace coordination, global documentation and shared environment defaults. Each
+project owns its source, tests, scripts, specific documentation and configuration overrides.
 
 | Project                                            | Responsibility                                          |
 | -------------------------------------------------- | ------------------------------------------------------- |
@@ -23,7 +23,8 @@ pnpm dev
 ```
 
 `setup` coordinates project setup tasks; `dev` runs persistent application tasks together.
-Project READMEs describe configuration and operational prerequisites. There is no root `.env`.
+The [global documentation index](docs/README.md) links shared guidance and project-specific guides.
+[Environment precedence](docs/environment.md) is process → project → workspace defaults in root `.env`.
 Use `pnpm --filter <package> <task>` to work on one project.
 
 ```sh
@@ -35,7 +36,7 @@ pnpm build
 ```
 
 These commands delegate to the projects that implement each task. Application-specific commands,
-outputs and environment variables stay in their project. Workflows in `.github/workflows` filter
+outputs and overrides stay in their project; common settings and guidance live at workspace scope. Workflows in `.github/workflows` filter
 on the owning project's files and declared workspace dependencies. Shared tooling changes run the
 checks of consumers; unrelated application changes do not run each other's CI. Actions are pinned
 and no workflow deploys or calls paid providers.

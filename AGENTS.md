@@ -1,7 +1,8 @@
 # Workspace conventions
 
-Use pnpm and the committed lockfile. The root coordinates the workspace; application source,
-tests, documentation, scripts and env files belong to their owning project. Reusable code and
+Use pnpm and the committed lockfile. The root coordinates the workspace and owns global documentation/shared env defaults. Application
+source, tests, scripts, specific guides and env overrides belong to their owning project. Link to
+global guides rather than copying shared rules. Reusable code and
 configuration must be exported by a declared workspace package. Do not import another app's source.
 
 Read the relevant project README and AGENTS instructions before changing behavior. Preserve public

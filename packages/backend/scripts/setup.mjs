@@ -1,10 +1,9 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { mergeEnv, writeEnv } from '@agent/environment'
+import { mergeEnv, readEnv, writeEnv } from '@agent/environment'
 import { dirname, join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { parseEnv } from 'node:util'
 
 function command(root, environment, executable, args, capture = false) {
   try {
@@ -46,7 +45,11 @@ export async function setup(root, run = command, confirm = confirmAction) {
   const major = Number(process.versions.node.split('.')[0])
   if (major < 24 || major >= 27)
     throw new Error('Install Node.js 24 LTS (supported: 24–26) before setup.')
-  const environment = { ...process.env }
+  const file = join(root, '.env')
+  const template = readFileSync(join(root, '.env.example'), 'utf8')
+  const existing = existsSync(file) ? readFileSync(file, 'utf8') : ''
+  const postgresPort = readEnv(root).POSTGRES_PORT || '5432'
+  const environment = { ...process.env, POSTGRES_PORT: postgresPort, COMPOSE_DISABLE_ENV_FILE: '1' }
   const compose = [
     'compose',
     '--project-name',
@@ -89,11 +92,6 @@ export async function setup(root, run = command, confirm = confirmAction) {
       'Legacy app/worker containers are still active. Stop them manually with docker stop (find their names with docker compose ps --all --orphans), then rerun pnpm setup and choose reuse. Their data will be retained.',
     )
 
-  const file = join(root, '.env')
-  const template = readFileSync(join(root, '.env.example'), 'utf8')
-  const existing = existsSync(file) ? readFileSync(file, 'utf8') : ''
-  const previous = parseEnv(existing)
-  const postgresPort = previous.POSTGRES_PORT || environment.POSTGRES_PORT || '5432'
   for (const port of [postgresPort]) {
     if (!/^\d+$/.test(String(port)) || Number(port) < 1 || Number(port) > 65535)
       throw new Error('POSTGRES_PORT must be a valid port number.')
@@ -102,6 +100,7 @@ export async function setup(root, run = command, confirm = confirmAction) {
     POSTGRES_PORT: postgresPort,
     DATABASE_URL: `postgresql://agent:agent-local@localhost:${postgresPort}/agent`,
   })
+  environment.POSTGRES_PORT = postgresPort
   const runningIds = docker(['ps', '--quiet'], true).trim().split(/\s+/).filter(Boolean)
   const occupied = runningIds.length
     ? docker(
@@ -145,9 +144,7 @@ export async function setup(root, run = command, confirm = confirmAction) {
     stopIds.push(container.id)
   }
   writeEnv(file, updated)
-  // Compose and host commands load .env directly; inherited keys must not override the file.
-  for (const key of Object.keys(parseEnv(template))) delete environment[key]
-  compose.push('--env-file', file)
+  // Compose receives only its resolved port; migration loading owns the env hierarchy.
   console.log('Updated .env from .env.example; existing values retained, obsolete keys removed.')
 
   run(root, environment, 'pnpm', ['install', '--frozen-lockfile'])

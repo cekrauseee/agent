@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - ".env.example"
+      - "docs/**"
+      - "README.md"
       - ".github/actions/check-project/**"
       - ".github/workflows/typescript-config.yml"
       - ".node-version"
@@ -17,6 +20,9 @@ on:
   push:
     branches: [main]
     paths:
+      - ".env.example"
+      - "docs/**"
+      - "README.md"
       - ".github/actions/check-project/**"
       - ".github/workflows/typescript-config.yml"
       - ".node-version"

@@ -14,16 +14,18 @@ pnpm setup
 pnpm dev
 ```
 
-Setup prepares `apps/worker/.env` from its own example. Initial database defaults come from the
-backend's local config; existing worker values are retained. Configure `DATABASE_URL`, the optional
+Setup prepares worker-specific overrides. Shared database/provider settings are inherited from the
+root base; existing explicit worker values are retained. Configure `DATABASE_URL`, the optional
 `DATABASE_DRIVER` override and `OPENAI_API_KEY`. Use the same database as the web app. No auth or
-HTTP-port configuration is required here. Node loads only this project's env file; exported
-variables take precedence and quoted `$NAME` references are literal.
+HTTP-port configuration is required here. Node loads project files before shared workspace files;
+exported variables take precedence and quoted `$NAME` references are literal.
 
-Development watches imported TypeScript files. `pnpm start` runs the persistent worker without
-watching. Both use the existing tsx runtime and the react-server condition for server-only modules.
-SIGINT/SIGTERM stop the loop and close the database pool. The workspace's `pnpm dev` starts both
-apps in one terminal; no worker build or application container is required.
+See the [global env hierarchy](../../docs/environment.md) and
+[setup order](../../docs/development.md). Development watches imported TypeScript files.
+`pnpm start` runs the persistent worker without watching. Both use the existing tsx runtime and the
+react-server condition for server-only modules. SIGINT/SIGTERM stop the loop and close the database
+pool. The workspace's `pnpm dev` starts both apps in one terminal; no worker build or application
+container is required.
 
 Missing provider configuration leaves admitted jobs pending. Run migrations before consumers;
 production workers must be long-lived and share the deployed web database and driver. Provider

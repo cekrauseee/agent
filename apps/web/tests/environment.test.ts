@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,6 +13,12 @@ test('web env loading preserves literal secrets and maps APP_PORT before Next st
   try {
     const envFile = join(directory, '.env')
     mkdirSync(join(directory, 'scripts'))
+    mkdirSync(join(directory, 'node_modules/@agent'), { recursive: true })
+    symlinkSync(
+      fileURLToPath(new URL('../../../packages/environment', import.meta.url)),
+      join(directory, 'node_modules/@agent/environment'),
+      'dir',
+    )
     const preload = join(directory, 'scripts/web-env.mjs')
     copyFileSync(join(root, 'scripts/web-env.mjs'), preload)
     writeFileSync(envFile, "APP_PORT=4317\nPORT=9999\nAGENT_ENV_FIXTURE='$LITERAL'\n")

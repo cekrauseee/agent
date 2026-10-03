@@ -24,12 +24,12 @@ pnpm db:migrate
 Generation reads `packages/backend/src/db/schema.ts` through `packages/backend/drizzle.config.ts`
 and requires no credentials. Generated SQL and metadata live in `packages/backend/drizzle`. Commit
 the generated SQL and Drizzle journal/snapshot files together. The backend migration command loads
-ignored `packages/backend/.env` with Node native env support; exported variables take precedence.
-The runner reads `DATABASE_URL`, `VERCEL_ENV` and the optional `DATABASE_DRIVER` override. Migration
-paths are resolved from the backend module, independently of the working directory. Vercel
-preview/production defaults to Neon; other environments default to node-postgres. A non-Vercel
-production worker can explicitly set `DATABASE_DRIVER=neon`. `NODE_ENV=production` alone does not
-select Neon. Compose supplies only PostgreSQL; configure the host connection in
+project overrides before shared root defaults through `@agent/environment`; exported variables take
+precedence. The runner reads `DATABASE_URL`, `VERCEL_ENV` and the optional `DATABASE_DRIVER`
+override. Migration paths are resolved from the backend module, independently of the working
+directory. Vercel preview/production defaults to Neon; other environments default to node-postgres.
+A non-Vercel production worker can explicitly set `DATABASE_DRIVER=neon`. `NODE_ENV=production`
+alone does not select Neon. Compose supplies only PostgreSQL; configure the host connection in
 `packages/backend/.env`. Applied migrations are recorded in `drizzle.__drizzle_migrations`; repeated
 runner calls skip already-applied migrations. Run one migration writer/runner at a time. Do not
 replace migrations with schema push or edit migrations already applied to a shared database.

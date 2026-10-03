@@ -1,6 +1,8 @@
-import { existsSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { loadEnv } from '@agent/environment'
 
-const envFile = fileURLToPath(new URL('../.env', import.meta.url))
-if (existsSync(envFile)) process.loadEnvFile(envFile)
-process.env.PORT = process.env.APP_PORT || process.env.PORT || '3000'
+const explicitPort = process.env.APP_PORT || process.env.PORT
+loadEnv(
+  new URL('../', import.meta.url),
+  process.env.NODE_ENV || (process.argv.includes('dev') ? 'development' : 'production'),
+)
+process.env.PORT = explicitPort || process.env.APP_PORT || process.env.PORT || '3000'

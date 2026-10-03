@@ -103,10 +103,16 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
       )
       if (down !== -1) assert.ok(calls[down].args.includes('--volumes'))
       const values = parseEnv(readFileSync(join(root, '.env'), 'utf8'))
-      assert.equal(values.POSTGRES_PORT, process.env.POSTGRES_PORT || '5432')
+      assert.equal(
+        calls.find((call) => call.args.includes('up'))?.environment.POSTGRES_PORT ??
+          process.env.POSTGRES_PORT ??
+          '5432',
+        process.env.POSTGRES_PORT || '5432',
+      )
       assert.equal(
         values.DATABASE_URL,
-        `postgresql://agent:agent-local@localhost:${values.POSTGRES_PORT}/agent`,
+        undefined,
+        'unset project overrides inherit the shared base',
       )
       assert.equal(statSync(join(root, '.env')).mode & 0o777, 0o600)
       const migration = calls.findIndex((call) => call.args.includes('db:migrate'))
@@ -132,15 +138,14 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
         assert.ok(install < postgresUp && postgresUp < migration)
         if (down !== -1) assert.ok(install < down && down < postgresUp)
         assert.ok(calls[postgresUp].args.includes('--wait'))
-        assert.ok(calls[postgresUp].args.includes(join(root, '.env')))
+        assert.equal(calls[postgresUp].environment.COMPOSE_DISABLE_ENV_FILE, '1')
         assert.equal(calls[migration].executable, 'pnpm')
         assert.deepEqual(calls[migration].args, ['db:migrate'])
-        for (const key of Object.keys(parseEnv(template)))
-          assert.equal(
-            calls[migration].environment[key],
-            undefined,
-            'host commands must load backend .env',
-          )
+        assert.equal(
+          calls[migration].environment.DATABASE_URL,
+          'postgresql://ignored:ignored@localhost:9/ignored',
+          'inherited process configuration has priority',
+        )
         assert.equal(migration, calls.length - 1, 'setup never launches persistent host apps')
       }
       assert.ok(calls.some((call) => call.args.includes('--frozen-lockfile')))

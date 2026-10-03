@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./register": "./src/register.mjs"
+  },
   "scripts": {
     "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
     "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
     "lint": "eslint --max-warnings 0 .",
     "typecheck": "tsc --noEmit",
-    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts"
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "setup": "node scripts/setup.mjs --workspace"
   },
   "prettier": "@agent/prettier-config",
   "devDependencies": {
@@ -21,5 +25,8 @@
     "prettier": "3.9.9",
     "tsx": "4.23.15",
     "typescript": "^5"
+  },
+  "bin": {
+    "agent-env": "./scripts/setup.mjs"
   }
 }

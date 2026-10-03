@@ -19,11 +19,11 @@ starting the Docker engine:
 pnpm setup
 ```
 
-Setup owns only this project's `.env`, `.env.example`, `compose.yaml` and database port. It prepares
-local PostgreSQL, waits for readiness and runs host `pnpm db:migrate`; no application build,
-container or persistent application process is started. It targets the existing Compose project
-`agent` and named volume, preserving data on reuse. `POSTGRES_PORT` defaults to 5432 and the host
-URL must match it. Runtime app URLs live in each app's own env file.
+Setup owns database operations and project overrides; shared defaults come from the root env base.
+It prepares local PostgreSQL, waits for readiness and runs host `pnpm db:migrate`; no application
+build, container or persistent application process is started. It targets the existing Compose
+project `agent` and named volume, preserving data on reuse. `POSTGRES_PORT` defaults to 5432 and the
+host URL must match it. Runtime app URLs live in each app's own env file.
 
 Before changing files/containers, existing project containers or volumes require a fresh-start
 confirmation: Enter/N reuses data; Y explicitly deletes this project's containers, orphans and all
@@ -38,10 +38,10 @@ succeed before an approved stop/reset. Failed commands stop the sequence. The sc
 an explicitly authorized reset.
 
 The shared environment helper preserves raw quoting, removes obsolete keys and writes `.env`
-atomically with mode 0600. Migration commands load only `packages/backend/.env`; exported values
-take precedence. Host parsing leaves `$NAME` literal. Compose interpolation applies to its own
-database port. The local `agent-local` password is a development-only value; setup never creates
-external credentials or calls a paid provider.
+atomically with mode 0600. Migration commands load project overrides before workspace defaults;
+exported values take precedence. Host parsing leaves `$NAME` literal. Compose receives the resolved
+port from setup without parsing application credentials. The local `agent-local` password is a
+development-only value; setup never creates external credentials or calls a paid provider.
 
 ```sh
 docker compose up --detach --wait postgres
@@ -54,9 +54,9 @@ permanently deletes local data. SQL/meta remain in `drizzle/`; schema and migrat
 resolve from this package. Use reviewed migrations, never schema push. Run one migration writer at a
 time.
 
-The package's `agent-app-env` binary shares initial local database defaults with app setup through
-`@agent/environment`. Each app keeps its own runtime values; changing the backend port later does
-not silently rewrite application URLs.
+Shared configuration is initialized before database setup by root `pnpm setup`. For independent
+commands, prepare the base with `pnpm --filter @agent/environment setup` first. Details and
+precedence are in the [global environment guide](../../docs/environment.md).
 
 ## Verification and CI
 

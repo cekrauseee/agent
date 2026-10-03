@@ -6,25 +6,27 @@ worker. Read the installed Next.js guide before changing framework behavior.
 
 ## Development and configuration
 
-Run commands from `apps/web`, after installing the workspace dependencies. Prepare the local
-database with `pnpm --filter @agent/backend setup`, then:
+Run commands from `apps/web`, after installing the workspace dependencies. Prepare the
+[shared base and local database](../../docs/development.md) with root `pnpm setup`, then:
 
 ```sh
 pnpm setup
 pnpm dev
 ```
 
-Setup normalizes this project's `.env` using `.env.example`. For initial database defaults only, it
-reads the backend's local configuration. Existing app values are preserved. The file is replaced
-atomically with mode 0600; raw quoting stays intact and `$NAME` references remain literal. The
-shared environment package generates a missing local Better Auth session secret and refuses to
-replace a short existing secret. External credentials remain blank until supplied.
+Setup normalizes web-specific settings and explicit overrides; database/provider defaults are
+inherited from the root base. Existing app values are preserved. The file is replaced atomically
+with mode 0600; raw quoting stays intact and `$NAME` references remain literal. The shared
+environment package generates a missing local Better Auth session secret and refuses to replace a
+short existing secret. External credentials remain blank until supplied.
 
-Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET` and `OPENAI_API_KEY` in
-`apps/web/.env`. `APP_PORT` defaults to 3000. Keep `BETTER_AUTH_URL` and Google's callback
-`http://localhost:3000/api/auth/callback/google` consistent with that port. Use the same database as
-the worker. The Next preload reads only this project's env file and sets the port before Next
-starts. Exported variables take precedence. Builds and process health require no service secrets.
+Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `BETTER_AUTH_SECRET` in the web env.
+Configure shared `OPENAI_API_KEY` using the
+[shared base and web overrides](../../docs/environment.md). `APP_PORT` defaults to 3000. Keep
+`BETTER_AUTH_URL` and Google's callback `http://localhost:3000/api/auth/callback/google` consistent
+with that port. Use the same database as the worker. The Next preload reads project files before
+shared workspace files and sets the port before Next starts. Exported variables take precedence.
+Builds and process health require no service secrets.
 
 `pnpm dev` from the workspace root starts both applications in one terminal. Run the worker for
 admitted generations to progress. Neither application is built or served in Docker.

@@ -27,6 +27,6 @@ test('dev schedules only persistent watching web and worker tasks without build 
   }
   assert.match(
     graph.tasks.find((task: { package: string }) => task.package === '@agent/worker').command,
-    /--env-file-if-exists=\.env .*--watch/,
+    /--import @agent\/environment\/register .*--watch/,
   )
 })
