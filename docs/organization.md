@@ -46,10 +46,11 @@ Project/page content and sibling conversations are never loaded into model conte
 
 ## Generation integration
 
-`lib/organization` exports `lockConversation(tx,ownerId,id)`, `publicConversation`, `publicMessage`
-and `initialTitle(text?)`. The executor uses the owned lock inside short transactions to create
-turns, replace the latest turn and reconcile status; it must compare the current generation identity
-and version before writing. No message mutation endpoint competes with generation execution.
+`@agent/backend/organization` exports `lockConversation(tx,ownerId,id)`, `publicConversation`,
+`publicMessage` and `initialTitle(text?)`. The executor uses the owned lock inside short
+transactions to create turns, replace the latest turn and reconcile status; it must compare the
+current generation identity and version before writing. No message mutation endpoint competes with
+generation execution.
 
 `deleteConversation(ownerId,id,db?)` returns an internal `{generationId,providerResponseId,status}`
 receipt after transactional deletion. The executor wires remote cancellation/cleanup at the deletion

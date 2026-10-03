@@ -8,19 +8,18 @@ tool loop, summarization agent or prompt cache is added.
 
 ## Running the worker
 
-Apply migrations before accepting work. Compose runs the app, PostgreSQL and a separate `worker`
-service from the same image:
+Apply migrations before accepting work. Compose runs PostgreSQL; the root development command starts
+both host applications using shared root `.env`:
 
 ```sh
-docker compose up --build --detach --wait postgres app
-docker compose run --rm app pnpm db:migrate
-docker compose up --detach --wait worker
+pnpm setup
+pnpm dev
 ```
 
-For host development, export `DATABASE_URL` and `OPENAI_API_KEY` and run `pnpm worker` alongside
-`pnpm dev`; the local driver defaults to PostgreSQL. A production worker outside Vercel using Neon
-must additionally set `DATABASE_DRIVER=neon`. The script consumes exported environment variables;
-Next's env-file loading does not apply to this separate process. Missing OpenAI configuration leaves
+The standalone worker entry is `apps/worker/src/run-worker.ts`; execution lives in
+`apps/worker/src/worker.ts` and reuses `@agent/backend`. `pnpm worker` runs only that worker with
+root `.env` loaded. The local database driver defaults to PostgreSQL; a non-Vercel production worker
+using Neon must additionally set `DATABASE_DRIVER=neon`. Missing OpenAI configuration leaves
 reservations pending and emits a sanitized worker error; configure the key and restart the worker to
 continue. It does not provision a key. A deployment needs this long-running process;
 request-lifetime background work is insufficient.

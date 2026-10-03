@@ -41,13 +41,13 @@ as client input. `/update-user` is disabled because profile editing is outside t
 
 ## Private API
 
-All custom private routes call `requireOwner(request)` from `lib/auth` before domain operations. It
-validates the Better Auth session and returns its user ID; downstream queries must additionally
-constrain each resource by that owner. Other users' resource identifiers should return 404.
-Mutations require an `Origin` exactly matching `BETTER_AUTH_URL`; missing, null and foreign origins
-return 403. A cookie name or client-supplied owner is never authentication. `lib/server/http`
-provides sanitized API errors, private/no-store JSON responses and byte-bounded JSON parsing for
-domain routes.
+All custom private routes call `requireOwner(request)` from `@agent/backend/auth` before domain
+operations. It validates the Better Auth session and returns its user ID; downstream queries must
+additionally constrain each resource by that owner. Other users' resource identifiers should
+return 404. Mutations require an `Origin` exactly matching `BETTER_AUTH_URL`; missing, null and
+foreign origins return 403. A cookie name or client-supplied owner is never authentication.
+`@agent/backend/server/http` provides sanitized API errors, private/no-store JSON responses and
+byte-bounded JSON parsing for domain routes.
 
 | Endpoint                    | Behavior                                                                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -63,11 +63,11 @@ retried without duplicates.
 
 ## Shared generation settings
 
-`lib/models.ts` exports `MODEL_CATALOG`, `DEFAULT_PREFERENCES`, `validatePreferences`,
-`effectivePreferences`, and the `Model`, `Effort`, `Preferences` types. Generation code must
-validate request overrides against this same allowlist and snapshot the effective pair at admission;
-later preference edits affect future generations only. Invalid stored pairs fail closed rather than
-silently selecting another model.
+`packages/backend/src/models.ts` exports `MODEL_CATALOG`, `DEFAULT_PREFERENCES`,
+`validatePreferences`, `effectivePreferences`, and the `Model`, `Effort`, `Preferences` types.
+Generation code must validate request overrides against this same allowlist and snapshot the
+effective pair at admission; later preference edits affect future generations only. Invalid stored
+pairs fail closed rather than silently selecting another model.
 
 Default: `gpt-6-luna` with `medium`. Luna accepts `none`, `low`, `medium`, `high`, `xhigh`, `max`;
 Sol (`gpt-6.1-sol`) accepts `low`, `medium`, `high`, `xhigh`, `max`. These values are independent of

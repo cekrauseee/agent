@@ -86,7 +86,7 @@ export async function setup(root, run = command, confirm = confirmAction) {
   docker(['info', '--format', '{{.ServerVersion}}'], true)
   docker(['compose', 'version', '--short'], true)
   const config = JSON.parse(docker([...compose, 'config', '--format', 'json'], true))
-  const output = docker([...compose, 'ps', '--all', '--format', 'json'], true).trim()
+  const output = docker([...compose, 'ps', '--all', '--orphans', '--format', 'json'], true).trim()
   const containers = output
     ? output.startsWith('[')
       ? JSON.parse(output)
@@ -102,6 +102,17 @@ export async function setup(root, run = command, confirm = confirmAction) {
           "Existing local containers or data found. Fresh start deletes this project's containers and ALL local PostgreSQL data. Fresh start?",
         )
       : false
+  if (
+    !reset &&
+    containers.some(
+      (container) =>
+        ['app', 'worker'].includes(container.Service) &&
+        ['running', 'restarting', 'paused'].includes(container.State),
+    )
+  )
+    throw new Error(
+      'Legacy app/worker containers are still active. Stop them manually with docker stop (find their names with docker compose ps --all --orphans), then rerun pnpm setup and choose reuse. Their data will be retained.',
+    )
 
   const file = join(root, '.env')
   const template = readFileSync(join(root, '.env.example'), 'utf8')
@@ -173,33 +184,27 @@ export async function setup(root, run = command, confirm = confirmAction) {
   } finally {
     rmSync(temporary, { force: true })
   }
-  // Compose handles quoting/interpolation itself; inherited values must not override the file.
+  // Compose and host commands load .env directly; inherited keys must not override the file.
   for (const key of Object.keys(parseEnv(template))) delete environment[key]
   compose.push('--env-file', file)
   console.log('Updated .env from .env.example; existing values retained, obsolete keys removed.')
 
   run(root, environment, 'pnpm', ['install', '--frozen-lockfile'])
-  docker([...compose, 'build', 'app', 'worker'])
   if (stopIds.length) docker(['stop', ...stopIds])
   if (reset) docker([...compose, 'down', '--volumes', '--remove-orphans'])
-  // Stop existing consumers before migrating, without removing their data.
-  docker([...compose, 'stop', 'app', 'worker'])
   docker([...compose, 'up', '--detach', '--wait', 'postgres'])
-  docker([...compose, 'run', '--rm', '--no-deps', 'app', 'pnpm', 'db:migrate'])
-  docker([...compose, 'up', '--detach', '--wait', 'app', 'worker'])
+  run(root, environment, 'pnpm', ['db:migrate'])
 
   const valuesAfter = parseEnv(updated)
   const missing = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'OPENAI_API_KEY'].filter(
     (key) => !valuesAfter[key]?.trim(),
   )
-  console.log(`Local containers are ready. API: http://localhost:${appPort}`)
+  console.log('PostgreSQL is ready and migrations are applied.')
   if (missing.length)
     console.log(
-      `Fill these existing service credentials in .env for login/AI: ${missing.join(', ')}. Then rerun pnpm setup and choose reuse.`,
+      `Fill these existing service credentials in .env for login/AI: ${missing.join(', ')}. Restart pnpm dev after changes.`,
     )
-  console.log(
-    `For host hot reload: docker compose stop app worker, then pnpm dev --port ${appPort}; run the host worker separately as described in docs/runtime.md.`,
-  )
+  console.log(`Run pnpm dev to start the host app and worker. API: http://localhost:${appPort}`)
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

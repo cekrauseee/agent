@@ -44,7 +44,16 @@ test('setup env upsert preserves raw values and follows the example', () => {
 })
 
 test('setup orchestrates reuse, fresh start and migration ordering safely', async () => {
-  for (const scenario of ['new', 'reuse', 'fresh', 'volume', 'denied', 'failed-build'] as const) {
+  for (const scenario of [
+    'new',
+    'reuse',
+    'fresh',
+    'volume',
+    'denied',
+    'failed-install',
+    'failed-ready',
+    'failed-migration',
+  ] as const) {
     const root = mkdtempSync(join(tmpdir(), 'agent-setup-'))
     writeFileSync(join(root, '.env.example'), template)
     const calls: {
@@ -53,6 +62,8 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
       environment: Record<string, string | undefined>
     }[] = []
     let prompts = 0
+    const inheritedDatabaseUrl = process.env.DATABASE_URL
+    process.env.DATABASE_URL = 'postgresql://ignored:ignored@localhost:9/ignored'
     const run = (
       _root: string,
       environment: Record<string, string | undefined>,
@@ -65,11 +76,19 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
       if (args.includes('ps'))
         return scenario === 'new' || scenario === 'volume'
           ? '[]'
-          : JSON.stringify({ Service: 'app', Publishers: [{ PublishedPort: 37419 }] }) +
+          : JSON.stringify({
+              Service: 'app',
+              State: scenario === 'fresh' ? 'running' : 'exited',
+              Publishers: [{ PublishedPort: 37419 }],
+            }) +
               '\n' +
               JSON.stringify({ Service: 'postgres', Publishers: [{ PublishedPort: 57419 }] })
       if (args.includes('ls')) return scenario === 'volume' ? 'isolated-test-volume\n' : ''
-      if (args.includes('build') && scenario === 'failed-build') throw new Error('build failed')
+      if (args.includes('install') && scenario === 'failed-install')
+        throw new Error('install failed')
+      if (args.includes('up') && scenario === 'failed-ready') throw new Error('readiness failed')
+      if (args.includes('db:migrate') && scenario === 'failed-migration')
+        throw new Error('migration failed')
       return ''
     }
     try {
@@ -99,7 +118,7 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
           assert.ok(question.includes('ALL local PostgreSQL data. Fresh start?'))
           return parseConfirmation(scenario === 'fresh' ? 'Y' : '')
         })
-      if (scenario === 'failed-build') await assert.rejects(invoke(), /build failed/)
+      if (scenario.startsWith('failed-')) await assert.rejects(invoke(), /failed/)
       else await invoke()
       assert.equal(prompts, scenario === 'new' ? 0 : 1)
       const down = calls.findIndex((call) => call.args.includes('down'))
@@ -119,36 +138,54 @@ test('setup orchestrates reuse, fresh start and migration ordering safely', asyn
       assert.equal(values.BETTER_AUTH_URL, `http://localhost:${values.APP_PORT}`)
       assert.equal(statSync(join(root, '.env')).mode & 0o777, 0o600)
       const migration = calls.findIndex((call) => call.args.includes('db:migrate'))
-      if (scenario === 'failed-build') {
-        assert.equal(migration, -1)
-        continue
-      }
-      const stop = calls.findIndex((call) => call.args.includes('stop'))
+      const install = calls.findIndex((call) => call.args.includes('install'))
       const postgresUp = calls.findIndex(
         (call) => call.args.includes('up') && call.args.at(-1) === 'postgres',
       )
-      const consumersUp = calls.findIndex(
-        (call) => call.args.includes('up') && call.args.at(-1) === 'worker',
+      assert.equal(
+        calls.some((call) => call.args.includes('build') || call.args.includes('run')),
+        false,
       )
-      assert.ok(stop < migration && postgresUp < migration && migration < consumersUp)
-      assert.equal(calls[migration].environment.BETTER_AUTH_SECRET, undefined)
-      assert.ok(
-        calls[migration].args.includes(join(root, '.env')),
-        'Compose must load .env directly, including interpolation',
+      assert.equal(
+        calls.some((call) => call.args.includes('app') || call.args.includes('worker')),
+        false,
       )
+      if (scenario === 'failed-install') {
+        assert.equal(postgresUp, -1)
+        assert.equal(migration, -1)
+      } else if (scenario === 'failed-ready') {
+        assert.ok(install < postgresUp)
+        assert.equal(migration, -1)
+      } else {
+        assert.ok(install < postgresUp && postgresUp < migration)
+        if (down !== -1) assert.ok(install < down && down < postgresUp)
+        assert.ok(calls[postgresUp].args.includes('--wait'))
+        assert.ok(calls[postgresUp].args.includes(join(root, '.env')))
+        assert.equal(calls[migration].executable, 'pnpm')
+        assert.deepEqual(calls[migration].args, ['db:migrate'])
+        for (const key of Object.keys(parseEnv(template)))
+          assert.equal(
+            calls[migration].environment[key],
+            undefined,
+            'host commands must load root .env',
+          )
+        assert.equal(migration, calls.length - 1, 'setup never launches persistent host apps')
+      }
       assert.ok(calls.some((call) => call.args.includes('--frozen-lockfile')))
     } finally {
+      if (inheritedDatabaseUrl === undefined) delete process.env.DATABASE_URL
+      else process.env.DATABASE_URL = inheritedDatabaseUrl
       rmSync(root, { recursive: true, force: true })
     }
   }
 })
 
-test('setup confirms port conflicts and stops only approved containers after a successful build', async () => {
+test('setup confirms port conflicts and stops only approved containers after a successful install', async () => {
   for (const scenario of [
     'accept',
     'decline',
     'partial',
-    'failed-build',
+    'failed-install',
     'stop-failed',
     'non-interactive',
     'configured',
@@ -208,7 +245,8 @@ test('setup confirms port conflicts and stops only approved containers after a s
         ]
           .map((container) => JSON.stringify(container))
           .join('\n')
-      if (args.includes('build') && scenario === 'failed-build') throw new Error('build failed')
+      if (args.includes('install') && scenario === 'failed-install')
+        throw new Error('install failed')
       if (args[0] === 'stop' && scenario === 'stop-failed') throw new Error('stop failed')
       return ''
     }
@@ -224,7 +262,7 @@ test('setup confirms port conflicts and stops only approved containers after a s
         await assert.rejects(setup(root, run), /terminal/)
       } else if (scenario === 'decline' || scenario === 'partial')
         await assert.rejects(setup(root, run, confirm), /configured ports remain occupied/)
-      else if (scenario === 'failed-build' || scenario === 'stop-failed')
+      else if (scenario === 'failed-install' || scenario === 'stop-failed')
         await assert.rejects(setup(root, run, confirm), /failed/)
       else await setup(root, run, confirm)
 
@@ -236,12 +274,13 @@ test('setup confirms port conflicts and stops only approved containers after a s
       const stop = calls.findIndex((args) => args[0] === 'stop')
       if (['accept', 'configured', 'stop-failed'].includes(scenario)) {
         assert.deepEqual(calls[stop], ['stop', 'app-conflict', 'db-conflict'])
-        assert.ok(calls.findIndex((args) => args.includes('build')) < stop)
-      } else assert.equal(stop, -1, 'no container is stopped unless all prompts and build succeed')
+        assert.ok(calls.findIndex((args) => args.includes('install')) < stop)
+      } else
+        assert.equal(stop, -1, 'no container is stopped unless all prompts and install succeed')
       if (['decline', 'partial', 'non-interactive'].includes(scenario)) {
         assert.equal(readFileSync(join(root, '.env'), 'utf8'), existing)
         assert.equal(
-          calls.some((args) => args.includes('build')),
+          calls.some((args) => args.includes('install')),
           false,
         )
       }
@@ -293,5 +332,45 @@ test('setup fails closed without a terminal for existing data and preserves inva
     assert.equal(mutations, 0)
   } finally {
     rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('setup requires manual legacy consumer shutdown on reuse and retains stopped containers', async () => {
+  for (const state of ['running', 'restarting', 'paused', 'exited', 'created']) {
+    for (const service of ['app', 'worker']) {
+      const root = mkdtempSync(join(tmpdir(), 'agent-setup-'))
+      writeFileSync(join(root, '.env.example'), template)
+      const existing = 'APP_PORT=3000\nPOSTGRES_PORT=5432\n'
+      writeFileSync(join(root, '.env'), existing)
+      const calls: string[][] = []
+      const run = (_root: string, _environment: unknown, _executable: string, args: string[]) => {
+        calls.push(args)
+        if (args.includes('config')) return '{"name":"agent"}'
+        if (args.includes('ps') && args.includes('--all')) {
+          assert.ok(args.includes('--orphans'), 'removed app/worker services must remain visible')
+          return JSON.stringify([{ Service: service, State: state }])
+        }
+        return ''
+      }
+      try {
+        if (['running', 'restarting', 'paused'].includes(state)) {
+          await assert.rejects(
+            setup(root, run, async () => false),
+            /Stop them manually with docker stop/,
+          )
+          assert.equal(readFileSync(join(root, '.env'), 'utf8'), existing)
+          assert.equal(
+            calls.some((args) => args.includes('install') || args.includes('up')),
+            false,
+          )
+        } else await setup(root, run, async () => false)
+        assert.equal(
+          calls.some((args) => args.includes('down') || args.includes('stop')),
+          false,
+        )
+      } finally {
+        rmSync(root, { recursive: true, force: true })
+      }
+    }
   }
 })

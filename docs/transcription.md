@@ -17,8 +17,8 @@ The application caps the **entire multipart body at 4,000,000 bytes**, including
 below OpenAI's documented 25 MB file limit. It counts actual streamed bytes even when
 `Content-Length` is absent or dishonest and stops oversized input before parsing FormData. Upload
 reading has a 30-second deadline. Any reverse proxy or deployment with a lower request limit must
-enforce that lower limit; reduce the application cap before hosting there. The current Docker
-runtime has no additional configured upload cap.
+enforce that lower limit; reduce the application cap before hosting there. The host Node runtime has
+no additional configured upload cap.
 
 The endpoint uses the shared server-owned OpenAI SDK client and `audio.transcriptions.create`, with
 exactly `gpt-transcribe`, JSON output and the English prompt

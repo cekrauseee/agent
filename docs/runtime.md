@@ -1,118 +1,91 @@
 # Local runtime
 
-Use Node.js 24 LTS (`.node-version`) and pnpm 11.10.0. The existing Next.js 16.3.8 and React 19.2.8
-versions are retained. shadcn is initialized with preset `b1VlIwYS` (`base-luma`, neutral colors,
-Lucide icons). Geist font files are bundled under `app/fonts` with their SIL license so builds do
-not fetch Google fonts.
+Use Node.js 24 LTS (`.node-version`), pnpm 11.10.0 and Docker Compose. The web app lives in
+`apps/web`, the durable generation worker in `apps/worker`, and shared server code in
+`packages/backend`. Both applications run on the host; Compose runs only PostgreSQL.
 
 ```sh
 pnpm setup
+pnpm dev
 ```
+
+`pnpm dev` starts the web app and worker together through Turborepo. Both processes and
+`pnpm db:migrate` load the ignored root `.env` with Node's native env support. `APP_PORT` controls
+the web app's port; the default is http://localhost:3000. Restart development after changing env
+values. The worker must run for admitted generations to progress. See
+[Conversation execution](conversations.md) for worker, HTTP/SSE and recovery contracts.
 
 ## Setup script
 
-`pnpm setup` runs `scripts/setup.mjs` with Node's standard library; no new dependency is needed.
-Install Node.js 24 LTS, pnpm 11.10.0 and Docker Compose first, and start the Docker engine. The
-command works before `node_modules` exists and installs dependencies using the committed lockfile.
-It does not install system tools or provision external services.
+`pnpm setup` runs `scripts/setup.mjs` using Node's standard library. It works before `node_modules`
+exists, installs with the committed lockfile, waits for PostgreSQL readiness, then applies
+migrations on the host. It finishes by instructing you to run `pnpm dev`; it does not build or start
+application containers or launch development processes. Install system tools and start the Docker
+engine first. Setup does not provision external services.
 
-The script targets the Compose project `agent`. Before changing files or containers, it detects
-existing project containers (including stopped ones) and labeled volumes. It prompts to reuse them
-by default with a `[y/N]` fresh start prompt: Enter, `N` or `no` reuses them; `Y` or `yes`
-authorizes deletion of this project's containers, orphans and volumes. Answers are case-insensitive.
-Fresh start permanently removes local PostgreSQL data. Non-interactive execution refuses to proceed
-when a confirmation is required; there is no automatic destructive confirmation.
+Setup targets the Compose project `agent`. Before changing files or containers, it detects existing
+containers, including stopped and orphaned services, and labeled volumes. A fresh start prompt
+defaults to reuse: Enter, `N` or `no` retains them; `Y` or `yes` authorizes deletion of this
+project's containers, orphans and volumes. Answers are case-insensitive. Fresh start permanently
+removes local PostgreSQL data. Non-interactive execution refuses whenever confirmation is needed.
 
-The env upsert uses `.env.example` as the allowlist, order and comment layout. Existing nonempty
-values retain their raw quoting and variable references; duplicate assignments collapse to their
-last value. Empty/missing values get example defaults, and a missing `BETTER_AUTH_SECRET` gets 32
-cryptographically random bytes encoded as 64 hex characters. An existing secret shorter than 32
-characters fails without changing it. Unknown keys and old comments are removed. Markdown-style
-explanations belong in the example, not the local file. The file is replaced atomically with
-owner-only permissions (`0600`). It is ignored by Git and excluded from Docker images.
+If reused legacy `app` or `worker` containers are running, restarting or paused, setup refuses
+before changes. Find their names with `docker compose ps --all --orphans`, stop them explicitly with
+`docker stop <name> ...`, then rerun setup and choose reuse. Stop any previously started host
+app/worker before migrations as well. Stopped legacy containers remain; the existing named
+`postgres-data` volume and rows are reused. To return to the previous container workflow, check out
+its Compose/Dockerfile version and stop the host processes first; database compatibility still
+depends on the applied migrations.
 
-When port values are missing, setup uses host `APP_PORT`/`POSTGRES_PORT` overrides, then 3000/5432.
-It does not inherit ports from existing containers or choose alternative ports. Missing
-`BETTER_AUTH_URL` and host `DATABASE_URL` follow those ports. Existing URLs/ports are not rewritten:
-keep related settings consistent yourself. Compose loads the normalized file directly, preserving
-its interpolation behavior instead of having Node expand values. Missing Google/OpenAI credentials
-remain blank; the script prints only their names and never fabricates credentials or makes paid
-requests. Fill already-provisioned credentials and rerun setup choosing reuse.
+The env upsert uses `.env.example` as its allowlist, order and comment layout. Existing nonempty
+values retain raw quoting; duplicate assignments collapse to their last value. Empty/missing values
+get example defaults. A missing `BETTER_AUTH_SECRET` gets 32 cryptographically random bytes encoded
+as 64 hex characters; an existing secret shorter than 32 characters fails without changing it.
+Obsolete keys and old comments are removed. `.env` is replaced atomically with owner-only
+permissions (`0600`) and remains ignored by Git. Host env parsing treats `$NAME` references
+literally; do not depend on Compose-style interpolation for application configuration.
 
-Before writing `.env`, setup checks other running containers for TCP bindings that conflict with the
-configured app/PostgreSQL localhost ports. Each conflicting container is identified in a `[y/N]`
-prompt. Enter or `N` cancels setup without changing `.env` or stopping any container. All stops must
-be approved; approved containers are stopped only after dependency installation and image build
-succeed. Their containers, images and volumes are retained. Existing services of this Compose
-project follow the reuse/fresh start flow instead. Ports occupied by host processes must be freed
-manually; setup does not stop host processes or switch to another port.
+Missing ports use host `APP_PORT`/`POSTGRES_PORT` overrides, then 3000/5432. Missing
+`BETTER_AUTH_URL` and `DATABASE_URL` follow those ports. Existing URLs/ports are preserved: keep
+them and Google's callback consistent yourself. Compose reads `.env` for its PostgreSQL port.
+Missing Google/OpenAI credentials remain blank; setup reports only their names, never fabricates
+credentials or makes paid requests. Fill already-provisioned credentials and restart development.
 
-After env setup, locked dependency installation and image build must succeed before any stop or
-reset. The script stops app/worker consumers, starts the healthy database, runs migrations, and only
-then starts app/worker. Reuse preserves the named volume and existing rows. A failed command exits
-nonzero and stops the sequence; rerunning can finish after the underlying failure is corrected. The
-script does not undo an explicitly authorized reset. Without service credentials, local
-containers/health can run, but Google login and paid features remain unavailable.
+Before writing `.env`, setup checks other running containers for TCP bindings conflicting with the
+configured app/PostgreSQL localhost ports. Each conflict requires confirmation to stop that
+container without deleting its data. Declining any prompt cancels without changing `.env` or
+stopping containers. All prompts and locked dependency installation must succeed before approved
+stops or resets. Host processes occupying those ports must be stopped manually.
 
-The Compose app runs the production build. For editing with hot reload, stop the Compose app and
-worker, run `pnpm dev` on the host, and start the host worker separately with its env values
-exported. Setup prepares the same database and host dependencies for that workflow; it does not
-launch a terminal-bound development process. Manual equivalents remain:
+A failed command stops the sequence; rerun after correcting the failure. Setup does not undo an
+explicitly authorized reset. Google login and paid features require configured service credentials;
+health checks and builds do not. Manual equivalents after configuring root `.env` are:
 
 ```sh
 pnpm install --frozen-lockfile
-docker compose build app worker
-docker compose stop app worker
 docker compose up --detach --wait postgres
-docker compose run --rm --no-deps app pnpm db:migrate
-docker compose up --detach --wait app worker
+pnpm db:migrate
+pnpm dev
 ```
 
-## Services and host development
+## PostgreSQL and runtime configuration
 
-The app listens at http://localhost:3000; PostgreSQL listens on localhost:5432. Ports bind only to
-the local machine. If a port is occupied, set `POSTGRES_PORT` and/or `APP_PORT` when running
-Compose; also update `BETTER_AUTH_URL` and your host-side database URL to match. `/api/health`
-checks process liveness; Compose waits for PostgreSQL readiness before starting the app. The named
-`postgres-data` volume survives `docker compose down`. `docker compose down --volumes` permanently
-deletes local data.
+PostgreSQL binds to `127.0.0.1:${POSTGRES_PORT:-5432}` with the existing `postgres-data` volume.
+`docker compose down` retains that volume; `docker compose down --volumes` permanently deletes local
+data. Compose's `agent-local` password is for the local development database only. Keep the host
+`DATABASE_URL` aligned with `POSTGRES_PORT`; Compose does not override application URLs. Apply
+migrations before starting workers or accepting API traffic.
 
-Compose also starts the durable generation worker; apply migrations before accepting work. See
-[Conversation execution](conversations.md) for HTTP/SSE, worker and context/reload contracts.
+Server modules import `server-only`. `requiredEnv()` in `packages/backend/src/server/env.ts` reads
+service credentials lazily, so module imports and builds do not require them. Never place secrets in
+`NEXT_PUBLIC_` variables. See [Authentication](auth.md) for Google's callback and session setup.
 
-See [Recording transcription](transcription.md) for the authenticated completed-audio upload
-endpoint, original-language output and upload/provider limits.
-
-For host development, keep the database running with `docker compose up --detach postgres`, then run
-`pnpm dev` and, with database/OpenAI variables exported, `pnpm worker`. Stop the Compose app and
-worker first. Use `pnpm dev --port <APP_PORT>` if your configured app port is not 3000; Google's
-callback must use that same origin.
-
-## Runtime configuration
-
-Server modules import `server-only`. Use `requiredEnv()` from `lib/server/env.ts` to read required
-service credentials lazily at runtime, keeping module imports and builds independent of services.
-Never put credentials in `NEXT_PUBLIC_` variables. Local env files are ignored by Git and excluded
-from Docker's build context; inject them at container startup only.
-
-`databaseConfig()` returns `{ driver, url }`. It defaults to `neon` when Vercel's `VERCEL_ENV` is
-`preview` or `production`, and to `postgres` otherwise, including Vercel development and local
-production-built Docker images. `NODE_ENV` controls framework behavior, not database transport.
-`DATABASE_URL` must use `postgres:` or `postgresql:`. Vercel's system environment variables must be
-exposed to the deployment; no connection opens during build.
-
-`DATABASE_DRIVER=postgres|neon` remains an optional explicit override, for example a production
-worker outside Vercel with a Neon URL. Its blank value in `.env.example` uses the automatic default;
-setup preserves an existing explicit value. Compose explicitly forces `postgres` with its internal
-database hostname. A non-Vercel worker must use the same database URL/driver as its deployed app,
-and must run as a long-lived process; Vercel request handlers do not replace that worker. See
-[database configuration](database.md).
-
-`.env.example` lists database, Better Auth, Google and OpenAI inputs. See [Authentication](auth.md)
-for Google callback configuration, session guards, profile/preferences endpoints and the shared
-model catalog. Real auth/provider secrets are needed for those features; the process health check
-and build do not need them. Compose's `agent-local` password is for its local development database
-only.
+`databaseConfig()` returns `{ driver, url }`. It defaults to `neon` when `VERCEL_ENV` is `preview`
+or `production`, and `postgres` otherwise. `NODE_ENV` controls framework behavior, not database
+transport. `DATABASE_URL` must use `postgres:` or `postgresql:`; no connection opens during build.
+`DATABASE_DRIVER=postgres|neon` is an optional explicit override. A non-Vercel production worker
+using Neon must select that driver and share the deployed app's database. It must run as a
+long-lived process; Vercel request handlers do not replace it. See [Database](database.md).
 
 ## Checks and migrations
 
@@ -125,24 +98,17 @@ pnpm build
 docker compose config --quiet
 ```
 
-Backend tests use Node's built-in test runner with `tsx` and the `react-server` condition for
-server-only modules. `pnpm db:generate` creates reviewable Drizzle migrations; `pnpm db:migrate`
-applies them. See [Database](database.md) for schema, driver lifecycle, generation transaction
-requirements and database checks.
+Backend tests use Node's built-in test runner with `tsx` and the `react-server` condition. Database
+checks need `TEST_DATABASE_URL` and create/drop only isolated temporary databases. Tests use
+controlled provider transports and make no paid requests.
 
-`tests/setup.test.ts` exercises env normalization/idempotence, preserved quoting, generated secrets,
-yes/no confirmations, reuse/explicit reset, volume-only recovery, port conflicts, refusal without
-side effects, non-interactive refusal, failed builds/stops and migration-before-consumer ordering in
-temporary directories with controlled command execution. It never deletes real containers or data.
+`pnpm db:generate` creates reviewable migrations in `packages/backend/drizzle`; `pnpm db:migrate`
+applies them using root `.env`. The schema and Drizzle configuration live in `packages/backend`. Run
+one migration writer/runner at a time and apply migrations before `pnpm dev`.
 
-Run migrations against the healthy Compose database with:
-
-```sh
-docker compose run --rm app pnpm db:migrate
-```
-
-The runtime image retains source and dependencies to support the same migration command. Rebuild it
-after changes to code or migrations. No credentials are baked into the image.
-
-See [CI and code style](ci.md) for GitHub checks and local formatting/lint commands. The
-[API reference](api.md) describes each endpoint's request and response contract.
+`tests/setup.test.ts` uses temporary directories and injected commands to check env idempotence,
+quoting, secret permissions, reuse/reset confirmations, volume-only recovery, port conflicts,
+non-interactive refusal, install/readiness/migration failures, legacy consumer transition, and host
+migrations after database readiness without application Docker builds or starts. It never operates
+real containers or data. See [CI and code style](ci.md) for the shared quality policy and
+[API reference](api.md) for request and response contracts.

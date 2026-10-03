@@ -1,34 +1,38 @@
 # Database
 
-`lib/db/schema.ts` is the shared Drizzle schema. Better Auth's `user`, `session`, `account` and
-`verification` use library-compatible string IDs. Domain records use database-generated UUIDs. User
-extensions are nullable `firstName`, `lastName`, `preferredModel` and `preferredEffort`; the auth
-configuration must declare these through Better Auth's `additionalFields`.
+`packages/backend/src/db/schema.ts` is the shared Drizzle schema. Better Auth's `user`, `session`,
+`account` and `verification` use library-compatible string IDs. Domain records use
+database-generated UUIDs. User extensions are nullable `firstName`, `lastName`, `preferredModel` and
+`preferredEffort`; the auth configuration must declare these through Better Auth's
+`additionalFields`.
 
-`getDb()` from `lib/db` lazily creates one process-wide pool for the long-running Node application.
-`createDatabase()` creates an explicitly scoped connection with `close()` for scripts/tests.
-PostgreSQL uses `drizzle-orm/node-postgres`; Neon uses `drizzle-orm/neon-serverless` and its
-Pool/WebSocket transport, preserving interactive transactions. Node 24 supplies the WebSocket
-constructor. Both pools allow ten connections with 30-second idle and 10-second connection timeouts.
-This lifecycle targets the Node/Docker runtime; an edge runtime would require request-scoped pools
-and close calls. Builds never open a connection.
+`getDb()` from `@agent/backend/db` lazily creates one process-wide pool for the long-running Node
+application. `createDatabase()` creates an explicitly scoped connection with `close()` for
+scripts/tests. PostgreSQL uses `drizzle-orm/node-postgres`; Neon uses `drizzle-orm/neon-serverless`
+and its Pool/WebSocket transport, preserving interactive transactions. Node 24 supplies the
+WebSocket constructor. Both pools allow ten connections with 30-second idle and 10-second connection
+timeouts. This lifecycle targets the Node runtime; an edge runtime would require request-scoped
+pools and close calls. Builds never open a connection.
 
 ## Migrations
 
 ```sh
 pnpm db:generate
-DATABASE_URL=postgresql://agent:agent-local@localhost:5432/agent pnpm db:migrate
+pnpm db:migrate
 ```
 
-Generation reads schema only and requires no credentials. Commit the generated SQL and Drizzle
-journal/snapshot files together. The migration runner reads `DATABASE_URL`, `VERCEL_ENV` and the
-optional `DATABASE_DRIVER` override from the process environment; host-side scripts do not
-automatically load Next.js env files. Vercel preview/production defaults to Neon; other environments
-default to node-postgres. A non-Vercel production worker can explicitly set `DATABASE_DRIVER=neon`.
-`NODE_ENV=production` alone does not select Neon. Compose injects its local connection
-configuration. Applied migrations are recorded in `drizzle.__drizzle_migrations`; repeated runner
-calls skip already-applied migrations. Run one migration writer/runner at a time. Do not replace
-migrations with schema push or edit migrations already applied to a shared database.
+Generation reads `packages/backend/src/db/schema.ts` through `packages/backend/drizzle.config.ts`
+and requires no credentials. Generated SQL and metadata live in `packages/backend/drizzle`. Commit
+the generated SQL and Drizzle journal/snapshot files together. The root migration command loads
+ignored root `.env` with Node native env support; exported variables take precedence. The runner
+reads `DATABASE_URL`, `VERCEL_ENV` and the optional `DATABASE_DRIVER` override. Migration paths are
+resolved from the backend module, independently of the working directory. Vercel preview/production
+defaults to Neon; other environments default to node-postgres. A non-Vercel production worker can
+explicitly set `DATABASE_DRIVER=neon`. `NODE_ENV=production` alone does not select Neon. Compose
+supplies only PostgreSQL; configure the host connection in root `.env`. Applied migrations are
+recorded in `drizzle.__drizzle_migrations`; repeated runner calls skip already-applied migrations.
+Run one migration writer/runner at a time. Do not replace migrations with schema push or edit
+migrations already applied to a shared database.
 
 ## Ownership and deletion
 

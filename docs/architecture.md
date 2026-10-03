@@ -39,11 +39,12 @@ erDiagram
   USER ||--o{ PAID_REQUEST : reserves
 ```
 
-The canonical definitions are in [`lib/db/schema.ts`](../lib/db/schema.ts), with reviewed SQL in
-`drizzle/`. Auth records use string IDs; domain records use UUIDs. `verification` stores Better Auth
-verification values. `generation_job` deliberately has no foreign key: its content-free provider
-cleanup records survive conversation deletion. It is identified by generation UUID and contains only
-provider ID, job state, cleanup flag, lease and timestamps.
+The canonical definitions are in
+[`packages/backend/src/db/schema.ts`](../packages/backend/src/db/schema.ts), with reviewed SQL in
+`packages/backend/drizzle/`. Auth records use string IDs; domain records use UUIDs. `verification`
+stores Better Auth verification values. `generation_job` deliberately has no foreign key: its
+content-free provider cleanup records survive conversation deletion. It is identified by generation
+UUID and contains only provider ID, job state, cleanup flag, lease and timestamps.
 
 Projects group conversations without contributing prompt context. Deleting a project detaches
 conversations; deleting a conversation removes messages, event ledgers and request fingerprints and
