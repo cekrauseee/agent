@@ -2,8 +2,8 @@
 
 Use Node.js 24 LTS (`.node-version`), pnpm 11.10.0 and Docker Compose. The web app lives in
 `apps/web`, the durable generation worker in `apps/worker`, and shared server code in
-`packages/backend`. Both applications run on the host; Compose runs only PostgreSQL. Bundled
-Geist font files and their SIL license live in `apps/web/app/fonts`, so builds need no font download.
+`packages/backend`. Both applications run on the host; Compose runs only PostgreSQL. Bundled Geist
+font files and their SIL license live in `apps/web/app/fonts`, so builds need no font download.
 
 ```sh
 pnpm setup

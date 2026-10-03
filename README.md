@@ -2,8 +2,8 @@
 
 A Next.js backend for Google-authenticated conversations, durable OpenAI generation, projects,
 private Markdown pages and recording transcription. The pnpm/Turborepo workspace contains the web
-app in `apps/web`, durable worker in `apps/worker` and shared server code in `packages/backend`.
-The landing page is minimal; bundled licensed fonts and shadcn infrastructure remain for future
+app in `apps/web`, durable worker in `apps/worker` and shared server code in `packages/backend`. The
+landing page is minimal; bundled licensed fonts and shadcn infrastructure remain for future
 interface work.
 
 ## Run locally
@@ -62,10 +62,11 @@ report no schema changes on an unchanged checkout; apply reviewed migrations wit
 using root `.env` (exported variables can override it).
 
 GitHub Actions runs format check, lint, typecheck, the full backend suite, production build, schema
-drift and Compose configuration checks with a disposable PostgreSQL service on PRs and `main`. Use `pnpm format` to apply the 100-column, single-quote,
-no-semicolon style. See [CI and code style](docs/ci.md), including typed errors for
-unused/deprecated code. The database driver defaults from `VERCEL_ENV`: Neon for Vercel
-preview/production, PostgreSQL otherwise; an explicit override supports non-Vercel workers.
+drift and Compose configuration checks with a disposable PostgreSQL service on PRs and `main`. Use
+`pnpm format` to apply the 100-column, single-quote, no-semicolon style. See
+[CI and code style](docs/ci.md), including typed errors for unused/deprecated code. The database
+driver defaults from `VERCEL_ENV`: Neon for Vercel preview/production, PostgreSQL otherwise; an
+explicit override supports non-Vercel workers.
 
 ## Developer documentation
 

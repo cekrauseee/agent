@@ -1,10 +1,10 @@
 # CI and code style
 
 `.github/workflows/ci.yml` runs on pull requests into `main`, pushes to `main` and manual workflow
-dispatch. One `Quality checks` job runs formatting, lint, type checking, the backend suite, production
-build, schema drift and Compose configuration checks. New runs cancel older runs for the same ref.
-The job has a 15-minute timeout and read-only repository permissions; action versions are pinned to
-their verified release commits.
+dispatch. One `Quality checks` job runs formatting, lint, type checking, the backend suite,
+production build, schema drift and Compose configuration checks. New runs cancel older runs for the
+same ref. The job has a 15-minute timeout and read-only repository permissions; action versions are
+pinned to their verified release commits.
 
 The runner uses Node from `.node-version`, pnpm from `package.json`, a cached pnpm store and
 `pnpm install --frozen-lockfile`. Its PostgreSQL 17 service is temporary, with a local test-only
@@ -22,7 +22,6 @@ pnpm format
 pnpm format:check
 pnpm lint
 pnpm typecheck
-pnpm build
 TEST_DATABASE_URL=postgresql://agent:agent-local@localhost:5432/agent pnpm test:backend
 pnpm build
 pnpm db:generate

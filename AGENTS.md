@@ -11,5 +11,5 @@ typecheck, lint and build; database checks require `TEST_DATABASE_URL` and must 
 temporary databases. Apply Prettier with `pnpm format`; unused/deprecated references are lint
 errors. Live provider calls and production operations need explicit authorization.
 
-Read the current Next.js guides under `apps/web/node_modules/next/dist/docs/` before changing
-the web application. The managed framework instructions live in `apps/web/AGENTS.md`.
+Read the current Next.js guides under `apps/web/node_modules/next/dist/docs/` before changing the
+web application. The managed framework instructions live in `apps/web/AGENTS.md`.
