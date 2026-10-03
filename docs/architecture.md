@@ -19,6 +19,25 @@ flowchart LR
   SSE --> Client
 ```
 
+## Workspace boundaries
+
+The pnpm workspace has two applications and one shared backend:
+
+- [`apps/web`](../apps/web) (`@agent/web`) contains the Next.js application, with Node route
+  handlers under [`app/api`](../apps/web/app/api). Its landing page is minimal; bundled licensed
+  fonts and shadcn components remain available for interface work.
+- [`apps/worker`](../apps/worker) (`@agent/worker`) runs the durable generation service. Its
+  [`run-worker.ts`](../apps/worker/src/run-worker.ts) entry owns the process and database lifecycle;
+  [`worker.ts`](../apps/worker/src/worker.ts) reconciles leased jobs and provider progress.
+- [`packages/backend`](../packages/backend) (`@agent/backend`) owns authentication, domain
+  transactions, database access, provider helpers and the saved SSE stream. Both applications import
+  its explicit package exports; neither application imports the other.
+
+Shared tooling lives in `packages/eslint-config`, `packages/prettier-config` and
+`packages/typescript-config`. Root commands coordinate package tasks through Turborepo. The
+cross-application regression suite stays in [`tests`](../tests). See [runtime](runtime.md) for
+configuration and process startup, and [CI and code style](ci.md) for quality checks.
+
 ## Data relationships
 
 ```mermaid
@@ -41,10 +60,13 @@ erDiagram
 
 The canonical definitions are in
 [`packages/backend/src/db/schema.ts`](../packages/backend/src/db/schema.ts), with reviewed SQL in
-`packages/backend/drizzle/`. Auth records use string IDs; domain records use UUIDs. `verification`
-stores Better Auth verification values. `generation_job` deliberately has no foreign key: its
-content-free provider cleanup records survive conversation deletion. It is identified by generation
-UUID and contains only provider ID, job state, cleanup flag, lease and timestamps.
+[`packages/backend/drizzle`](../packages/backend/drizzle). The backend's
+[`migration path helper`](../packages/backend/src/db/migrations.ts) resolves that folder from its
+module location so migration callers do not depend on a working directory. Auth records use string
+IDs; domain records use UUIDs. `verification` stores Better Auth verification values.
+`generation_job` deliberately has no foreign key: its content-free provider cleanup records survive
+conversation deletion. It is identified by generation UUID and contains only provider ID, job state,
+cleanup flag, lease and timestamps.
 
 Projects group conversations without contributing prompt context. Deleting a project detaches
 conversations; deleting a conversation removes messages, event ledgers and request fingerprints and
