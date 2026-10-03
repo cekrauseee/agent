@@ -1,8 +1,11 @@
 # Web
 
-The `agent-web` Next.js Node application owns HTTP routes, the minimal landing page, components,
-fonts and web-only tooling. Reused domain code comes from `@agent/backend`; this project does not
-import the worker. Read the installed Next.js guide before changing framework behavior.
+The `agent-web` Next.js Node application owns the Google-authenticated conversation interface, HTTP
+routes, components, fonts and web-only tooling. Home supports text and recording transcription,
+reasoning effort selection, editable latest turns and durable OpenAI generation using shadcn preset
+`b1VlIwYS`. The APIs also provide projects and private Markdown pages. Reused domain code comes from
+`@agent/backend`; this project does not import the worker. Read the installed Next.js guide before
+changing framework behavior.
 
 ## Development and configuration
 
@@ -33,6 +36,8 @@ admitted generations to progress. Neither application is built or served in Dock
 
 ## Documentation
 
+- [Conversation interface](docs/frontend.md): routes, client state, recording, transcript position
+  and controlled browser verification.
 - [API contracts](docs/api.md): requests, responses, errors and SSE.
 - [Authentication and preferences](docs/auth.md): Google, sessions and model settings.
 - [Conversation routes](docs/conversations.md), [history](docs/organization.md),
@@ -50,10 +55,12 @@ TEST_DATABASE_URL=<local-admin-url> pnpm test
 pnpm build
 ```
 
-Tests in `tests/` exercise actual route handlers, signed sessions and persisted SSE data.
-Transcription uses controlled SDK transports; generation route tests seed saved worker outcomes
-through the shared schema. Database tests create/drop only isolated local databases. Without
-`TEST_DATABASE_URL` they are skipped. Live OAuth/provider behavior remains separate.
+The `pnpm test` command runs server tests in `tests/` and client tests in `tests/frontend/` in
+separate processes. Server tests exercise actual route handlers, signed sessions and persisted SSE
+data; `pnpm test:frontend` runs only client checks without the React server condition. Transcription
+uses controlled SDK transports; generation route tests seed saved worker outcomes through the shared
+schema. Database tests create/drop only isolated local databases. Without `TEST_DATABASE_URL` they
+are skipped. Live OAuth/provider behavior remains separate.
 
 The [web workflow](../../.github/workflows/web.yml) runs only for web or declared dependency
 changes, including shared config and workspace tooling. It supplies a disposable PostgreSQL database
