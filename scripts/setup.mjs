@@ -48,28 +48,26 @@ function command(root, environment, executable, args, capture = false) {
   }
 }
 
-async function confirmReset() {
+export function parseConfirmation(answer) {
+  const value = answer.trim().toLowerCase()
+  if (!['', 'y', 'yes', 'n', 'no'].includes(value))
+    throw new Error('Setup cancelled: answer yes or no (y/N).')
+  return value === 'y' || value === 'yes'
+}
+
+async function confirmAction(question) {
   if (!process.stdin.isTTY)
-    throw new Error(
-      'Existing local containers or data found. Run pnpm setup in a terminal to choose reuse or authorize a fresh start.',
-    )
+    throw new Error('Run pnpm setup in a terminal to answer the confirmation prompts.')
   const prompt = createInterface({ input: process.stdin, output: process.stdout })
   try {
-    const answer = await prompt.question(
-      'Existing local containers or data found. A fresh start deletes this project\'s containers and ALL local PostgreSQL data. Type "fresh start" to authorize, or press Enter to reuse: ',
-    )
-    if (answer && answer !== 'fresh start')
-      throw new Error(
-        'Setup cancelled: enter exactly fresh start or leave the answer empty to reuse.',
-      )
-    return answer === 'fresh start'
+    return parseConfirmation(await prompt.question(`${question} [y/N]: `))
   } finally {
     prompt.close()
   }
 }
 
 /** The injected command/prompt let focused checks exercise setup without deleting real data. */
-export async function setup(root, run = command, confirm = confirmReset) {
+export async function setup(root, run = command, confirm = confirmAction) {
   const major = Number(process.versions.node.split('.')[0])
   if (major < 24 || major >= 27)
     throw new Error('Install Node.js 24 LTS (supported: 24–26) before setup.')
@@ -98,19 +96,19 @@ export async function setup(root, run = command, confirm = confirmReset) {
     ['volume', 'ls', '--filter', `label=com.docker.compose.project=${config.name}`, '--quiet'],
     true,
   ).trim()
-  const reset = containers.length || volumes ? await confirm() : false
+  const reset =
+    containers.length || volumes
+      ? await confirm(
+          "Existing local containers or data found. Fresh start deletes this project's containers and ALL local PostgreSQL data. Fresh start?",
+        )
+      : false
 
   const file = join(root, '.env')
   const template = readFileSync(join(root, '.env.example'), 'utf8')
   const existing = existsSync(file) ? readFileSync(file, 'utf8') : ''
   const previous = parseEnv(existing)
-  const publishedPort = (service) =>
-    containers
-      .find((container) => container.Service === service)
-      ?.Publishers?.find((port) => port.PublishedPort)?.PublishedPort
-  const appPort = previous.APP_PORT || environment.APP_PORT || publishedPort('app') || '3000'
-  const postgresPort =
-    previous.POSTGRES_PORT || environment.POSTGRES_PORT || publishedPort('postgres') || '5432'
+  const appPort = previous.APP_PORT || environment.APP_PORT || '3000'
+  const postgresPort = previous.POSTGRES_PORT || environment.POSTGRES_PORT || '5432'
   for (const port of [appPort, postgresPort]) {
     if (!/^\d+$/.test(String(port)) || Number(port) < 1 || Number(port) > 65535)
       throw new Error('APP_PORT and POSTGRES_PORT must be valid port numbers.')
@@ -125,6 +123,48 @@ export async function setup(root, run = command, confirm = confirmReset) {
     throw new Error(
       'Existing BETTER_AUTH_SECRET is too short; provide at least 32 characters in .env. Its value was not changed.',
     )
+  const runningIds = docker(['ps', '--quiet'], true).trim().split(/\s+/).filter(Boolean)
+  const occupied = runningIds.length
+    ? docker(
+        [
+          'inspect',
+          '--type',
+          'container',
+          '--format',
+          '{"id":{{json .Id}},"name":{{json .Name}},"project":{{json (index .Config.Labels "com.docker.compose.project")}},"ports":{{json .NetworkSettings.Ports}}}',
+          ...runningIds,
+        ],
+        true,
+      )
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+        .filter((container) => container.project !== config.name)
+    : []
+  const stopIds = []
+  for (const container of occupied) {
+    const ports = Object.entries(container.ports ?? {}).flatMap(([target, bindings]) =>
+      target.endsWith('/tcp')
+        ? (bindings ?? [])
+            .filter(
+              (binding) =>
+                ['', '0.0.0.0', '127.0.0.1', '::'].includes(binding.HostIp) &&
+                [String(appPort), String(postgresPort)].includes(binding.HostPort),
+            )
+            .map((binding) => binding.HostPort)
+        : [],
+    )
+    if (!ports.length) continue
+    if (
+      !(await confirm(
+        `Container ${container.name.replace(/^\//, '')} (${container.id}) occupies host port(s) ${[...new Set(ports)].join(', ')}. Stop it without removing its data?`,
+      ))
+    )
+      throw new Error(
+        'Setup cancelled: the configured ports remain occupied; no containers stopped.',
+      )
+    stopIds.push(container.id)
+  }
   const temporary = `${file}.setup-${randomUUID()}`
   try {
     writeFileSync(temporary, updated, { mode: 0o600, flag: 'wx' })
@@ -140,6 +180,7 @@ export async function setup(root, run = command, confirm = confirmReset) {
 
   run(root, environment, 'pnpm', ['install', '--frozen-lockfile'])
   docker([...compose, 'build', 'app', 'worker'])
+  if (stopIds.length) docker(['stop', ...stopIds])
   if (reset) docker([...compose, 'down', '--volumes', '--remove-orphans'])
   // Stop existing consumers before migrating, without removing their data.
   docker([...compose, 'stop', 'app', 'worker'])

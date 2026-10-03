@@ -15,10 +15,12 @@ pnpm setup
 
 Setup installs locked dependencies, upserts `.env` from `.env.example`, builds the containers,
 starts PostgreSQL, applies migrations and starts the app/worker. If this project's containers or
-data already exist, press Enter to reuse them; type `fresh start` only to authorize deleting the
-project's local PostgreSQL data. Existing values are preserved, missing local defaults/session
-secret are generated, and obsolete keys are removed. Existing published ports are reused when their
-env values are missing. See [setup details](docs/runtime.md#setup-script).
+data already exist, answer the fresh start prompt with Enter or `N` to reuse them, or `Y` to
+authorize deleting the project's local PostgreSQL data. Existing values are preserved, missing local
+defaults/session secret are generated, and obsolete keys are removed. Ports come from `.env` or host
+overrides, falling back to 3000/5432. If another container occupies a configured port, setup asks
+`[y/N]` before stopping it without deleting its data; declining cancels setup. See
+[setup details](docs/runtime.md#setup-script).
 
 The defaults are `http://localhost:3000` for the app and localhost:5432 for PostgreSQL. Fill
 existing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `OPENAI_API_KEY` credentials in `.env`;
