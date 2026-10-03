@@ -18,10 +18,10 @@ It does not install system tools or provision external services.
 
 The script targets the Compose project `agent`. Before changing files or containers, it detects
 existing project containers (including stopped ones) and labeled volumes. It prompts to reuse them
-by default, or requires the exact phrase `fresh start` to authorize deletion of this project's
-containers, orphans and volumes. Fresh start permanently removes local PostgreSQL data. Other
-Compose projects and images are left alone. Non-interactive execution refuses to proceed when
-existing containers/data require that choice; there is no automatic destructive confirmation.
+by default with a `[y/N]` fresh start prompt: Enter, `N` or `no` reuses them; `Y` or `yes`
+authorizes deletion of this project's containers, orphans and volumes. Answers are case-insensitive.
+Fresh start permanently removes local PostgreSQL data. Non-interactive execution refuses to proceed
+when a confirmation is required; there is no automatic destructive confirmation.
 
 The env upsert uses `.env.example` as the allowlist, order and comment layout. Existing nonempty
 values retain their raw quoting and variable references; duplicate assignments collapse to their
@@ -31,17 +31,25 @@ characters fails without changing it. Unknown keys and old comments are removed.
 explanations belong in the example, not the local file. The file is replaced atomically with
 owner-only permissions (`0600`). It is ignored by Git and excluded from Docker images.
 
-When port values are missing, setup uses host `APP_PORT`/`POSTGRES_PORT` overrides or this project's
-existing published ports, then the example defaults. Missing `BETTER_AUTH_URL` and host
-`DATABASE_URL` follow those ports. Existing URLs/ports are not rewritten: keep related settings
-consistent yourself. Compose loads the normalized file directly, preserving its interpolation
-behavior instead of having Node expand values. Missing Google/OpenAI credentials remain blank; the
-script prints only their names and never fabricates credentials or makes paid requests. Fill
-already-provisioned credentials and rerun setup choosing reuse.
+When port values are missing, setup uses host `APP_PORT`/`POSTGRES_PORT` overrides, then 3000/5432.
+It does not inherit ports from existing containers or choose alternative ports. Missing
+`BETTER_AUTH_URL` and host `DATABASE_URL` follow those ports. Existing URLs/ports are not rewritten:
+keep related settings consistent yourself. Compose loads the normalized file directly, preserving
+its interpolation behavior instead of having Node expand values. Missing Google/OpenAI credentials
+remain blank; the script prints only their names and never fabricates credentials or makes paid
+requests. Fill already-provisioned credentials and rerun setup choosing reuse.
 
-After env setup, locked dependency installation and image build must succeed before any reset. The
-script stops app/worker consumers, starts the healthy database, runs migrations, and only then
-starts app/worker. Reuse preserves the named volume and existing rows. A failed command exits
+Before writing `.env`, setup checks other running containers for TCP bindings that conflict with the
+configured app/PostgreSQL localhost ports. Each conflicting container is identified in a `[y/N]`
+prompt. Enter or `N` cancels setup without changing `.env` or stopping any container. All stops must
+be approved; approved containers are stopped only after dependency installation and image build
+succeed. Their containers, images and volumes are retained. Existing services of this Compose
+project follow the reuse/fresh start flow instead. Ports occupied by host processes must be freed
+manually; setup does not stop host processes or switch to another port.
+
+After env setup, locked dependency installation and image build must succeed before any stop or
+reset. The script stops app/worker consumers, starts the healthy database, runs migrations, and only
+then starts app/worker. Reuse preserves the named volume and existing rows. A failed command exits
 nonzero and stops the sequence; rerunning can finish after the underlying failure is corrected. The
 script does not undo an explicitly authorized reset. Without service credentials, local
 containers/health can run, but Google login and paid features remain unavailable.
@@ -123,9 +131,9 @@ applies them. See [Database](database.md) for schema, driver lifecycle, generati
 requirements and database checks.
 
 `tests/setup.test.ts` exercises env normalization/idempotence, preserved quoting, generated secrets,
-reuse/explicit reset, volume-only recovery, non-interactive refusal, failed builds and
-migration-before-consumer ordering in temporary directories with controlled command execution. It
-never deletes real containers or data.
+yes/no confirmations, reuse/explicit reset, volume-only recovery, port conflicts, refusal without
+side effects, non-interactive refusal, failed builds/stops and migration-before-consumer ordering in
+temporary directories with controlled command execution. It never deletes real containers or data.
 
 Run migrations against the healthy Compose database with:
 
