@@ -716,10 +716,10 @@ test(
         /audio failed/,
       )
       const [audio] = await db
-        .select()
+        .select({ released: sql<boolean>`${paidRequests.activeUntil} <= now()` })
         .from(paidRequests)
         .where(eq(paidRequests.ownerId, actors[1].id))
-      assert.ok(audio.activeUntil.getTime() <= Date.now())
+      assert.equal(audio.released, true)
       for (let i = 0; i < 9; i++)
         await withPaidRequest(actors[1].id, 'transcription', async () => 'text', db)
       await assert.rejects(
