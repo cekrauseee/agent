@@ -1,0 +1,10 @@
+{
+  "name": "@agent/typescript-config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./base": "./base.json",
+    "./node": "./node.json",
+    "./next": "./next.json"
+  }
+}

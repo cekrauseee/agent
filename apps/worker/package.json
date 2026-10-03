@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --conditions=react-server --import tsx --watch src/run-worker.ts",
-    "start": "node --conditions=react-server --import tsx src/run-worker.ts",
-    "typecheck": "tsc --noEmit"
+    "dev": "node --env-file-if-exists=../../.env --conditions=react-server --import tsx --watch src/run-worker.ts",
+    "start": "node --env-file-if-exists=../../.env --conditions=react-server --import tsx src/run-worker.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --max-warnings 0 ."
   },
   "dependencies": {
     "@agent/backend": "workspace:*",
@@ -17,6 +18,9 @@
   },
   "devDependencies": {
     "@types/node": "^20",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@agent/eslint-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "eslint": "^9"
   }
 }

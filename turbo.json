@@ -1,0 +1,46 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "globalDependencies": [
+    ".env*",
+    "tsconfig.json",
+    "eslint.config.mjs",
+    "prettier.config.mjs",
+    "scripts/web-env.mjs"
+  ],
+  "globalEnv": [
+    "APP_PORT",
+    "PORT",
+    "DATABASE_*",
+    "BETTER_AUTH_*",
+    "GOOGLE_*",
+    "OPENAI_*",
+    "NEXT_PUBLIC_*",
+    "VERCEL_ENV",
+    "NODE_ENV"
+  ],
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "//#lint:root": {},
+    "//#typecheck:root": {
+      "dependsOn": ["@agent/web#typecheck", "@agent/worker#typecheck", "@agent/backend#typecheck"]
+    },
+    "@agent/web#typecheck": {
+      "outputs": [".next/types/**", "next-env.d.ts", "*.tsbuildinfo"]
+    }
+  }
+}

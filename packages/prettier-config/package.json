@@ -1,0 +1,6 @@
+{
+  "name": "@agent/prettier-config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": "./index.json"
+}

@@ -21,7 +21,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --conditions=react-server --import tsx src/db/migrate.ts"
+    "db:migrate": "node --env-file-if-exists=../../.env --conditions=react-server --import tsx src/db/migrate.ts",
+    "lint": "eslint --max-warnings 0 ."
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.7",
@@ -37,6 +38,9 @@
     "@types/pg": "8.23.1",
     "drizzle-kit": "0.31.11",
     "tsx": "4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@agent/eslint-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "eslint": "^9"
   }
 }

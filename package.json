@@ -4,17 +4,20 @@
   "private": true,
   "scripts": {
     "setup": "node scripts/setup.mjs",
-    "dev": "pnpm --filter @agent/web dev",
+    "dev": "turbo run dev --filter='./apps/*'",
     "worker": "pnpm --filter @agent/worker start",
-    "build": "pnpm --filter @agent/web build",
+    "build": "turbo run build",
     "start": "pnpm --filter @agent/web start",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "eslint --max-warnings 0",
-    "typecheck": "pnpm --filter @agent/web typecheck && pnpm --filter @agent/backend typecheck && pnpm --filter @agent/worker typecheck && tsc --noEmit",
+    "lint": "turbo run lint lint:root",
+    "typecheck": "turbo run typecheck typecheck:root",
     "test:backend": "node --conditions=react-server --import tsx --test tests/*.test.ts",
     "db:generate": "pnpm --filter @agent/backend db:generate",
-    "db:migrate": "pnpm --filter @agent/backend db:migrate"
+    "db:migrate": "pnpm --filter @agent/backend db:migrate",
+    "worker:dev": "turbo run dev --filter=@agent/worker",
+    "lint:root": "eslint --max-warnings 0 tests scripts packages/eslint-config *.mjs",
+    "typecheck:root": "tsc --noEmit"
   },
   "devDependencies": {
     "better-auth": "1.7.7",
@@ -23,14 +26,15 @@
     "pg": "8.23.1",
     "@types/node": "^20",
     "@types/pg": "8.23.1",
-    "drizzle-kit": "0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
-    "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.9",
     "tsx": "4.23.15",
     "typescript": "^5",
-    "@agent/backend": "workspace:*"
+    "@agent/backend": "workspace:*",
+    "@agent/eslint-config": "workspace:*",
+    "@agent/prettier-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "turbo": "2.11.7"
   },
   "packageManager": "pnpm@11.10.0",
   "engines": {

@@ -8,3 +8,10 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@neondatabase/serverless@1.2.0'
   - openai@7.27.0
+  - '@turbo/darwin-64@2.11.7'
+  - '@turbo/darwin-arm64@2.11.7'
+  - '@turbo/linux-64@2.11.7'
+  - '@turbo/linux-arm64@2.11.7'
+  - '@turbo/windows-64@2.11.7'
+  - '@turbo/windows-arm64@2.11.7'
+  - turbo@2.11.7
