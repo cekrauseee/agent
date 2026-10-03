@@ -189,7 +189,8 @@ test(
     } finally {
       await connection.close()
       await pool.end()
-      await admin.query(`DROP DATABASE "${database}" WITH (FORCE)`)
+      // Let PostgreSQL wait for closing sockets instead of forcibly terminating them.
+      await admin.query(`DROP DATABASE "${database}"`)
       await admin.end()
     }
   },
