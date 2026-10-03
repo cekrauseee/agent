@@ -1,3 +1,4 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
@@ -10,8 +11,8 @@ import { Pool } from 'pg'
 import { and, count, eq, sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { makeSignature } from 'better-auth/crypto'
-import { getAuth } from '../lib/auth'
-import { createDatabase, getDb } from '../lib/db'
+import { getAuth } from '@agent/backend/auth'
+import { createDatabase, getDb } from '@agent/backend/db'
 import {
   conversations,
   generationEvents,
@@ -19,18 +20,24 @@ import {
   messages,
   paidRequests,
   user,
-} from '../lib/db/schema'
-import { messageText, submitTurn, getGeneration, readEvents, cancelGeneration } from '../lib/agent'
-import { reconcile, replayContext, saveEvent, saveResponse } from '../lib/agent/worker'
-import { eventCursor } from '../lib/agent/stream'
-import { reservePaid, releasePaid, withPaidRequest } from '../lib/server/openai'
-import { POST as postMessage } from '../app/api/conversations/[id]/messages/route'
-import { PATCH as editMessage } from '../app/api/conversations/[id]/messages/[messageId]/route'
-import { POST as retry } from '../app/api/conversations/[id]/generations/[generationId]/retry/route'
-import { POST as cancelRoute } from '../app/api/conversations/[id]/generations/[generationId]/cancel/route'
-import { GET as state } from '../app/api/conversations/[id]/generations/[generationId]/route'
-import { GET as streamRoute } from '../app/api/conversations/[id]/generations/[generationId]/events/route'
-import { DELETE as deleteRoute } from '../app/api/conversations/[id]/route'
+} from '@agent/backend/db/schema'
+import {
+  messageText,
+  submitTurn,
+  getGeneration,
+  readEvents,
+  cancelGeneration,
+} from '@agent/backend/agent'
+import { reconcile, replayContext, saveEvent, saveResponse } from '../apps/worker/src/worker'
+import { eventCursor } from '@agent/backend/agent/stream'
+import { reservePaid, releasePaid, withPaidRequest } from '@agent/backend/server/openai'
+import { POST as postMessage } from '../apps/web/app/api/conversations/[id]/messages/route'
+import { PATCH as editMessage } from '../apps/web/app/api/conversations/[id]/messages/[messageId]/route'
+import { POST as retry } from '../apps/web/app/api/conversations/[id]/generations/[generationId]/retry/route'
+import { POST as cancelRoute } from '../apps/web/app/api/conversations/[id]/generations/[generationId]/cancel/route'
+import { GET as state } from '../apps/web/app/api/conversations/[id]/generations/[generationId]/route'
+import { GET as streamRoute } from '../apps/web/app/api/conversations/[id]/generations/[generationId]/events/route'
+import { DELETE as deleteRoute } from '../apps/web/app/api/conversations/[id]/route'
 
 const citation = {
   type: 'url_citation',
@@ -244,7 +251,7 @@ test(
     const remote = controlledProvider()
     const actorClient = remote.client
     try {
-      await migrate(db, { migrationsFolder: 'drizzle' })
+      await migrate(db, { migrationsFolder })
       const auth = await getAuth().$context
       const actors = await Promise.all(
         ['A', 'B'].map((name) =>

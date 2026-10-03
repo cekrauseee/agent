@@ -1,3 +1,4 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
@@ -5,9 +6,9 @@ import { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { makeSignature } from 'better-auth/crypto'
-import { getAuth } from '../lib/auth'
-import { getDb } from '../lib/db'
-import { conversations, messages } from '../lib/db/schema'
+import { getAuth } from '@agent/backend/auth'
+import { getDb } from '@agent/backend/db'
+import { conversations, messages } from '@agent/backend/db/schema'
 import {
   deleteConversation,
   initialTitle,
@@ -15,12 +16,12 @@ import {
   pagination,
   title,
   uuid,
-} from '../lib/organization'
-import * as projectRoutes from '../app/api/projects/route'
-import * as projectRoute from '../app/api/projects/[id]/route'
-import * as conversationRoutes from '../app/api/conversations/route'
-import * as conversationRoute from '../app/api/conversations/[id]/route'
-import { GET as history } from '../app/api/conversations/[id]/messages/route'
+} from '@agent/backend/organization'
+import * as projectRoutes from '../apps/web/app/api/projects/route'
+import * as projectRoute from '../apps/web/app/api/projects/[id]/route'
+import * as conversationRoutes from '../apps/web/app/api/conversations/route'
+import * as conversationRoute from '../apps/web/app/api/conversations/[id]/route'
+import { GET as history } from '../apps/web/app/api/conversations/[id]/messages/route'
 
 test('organization input limits', () => {
   for (const value of [null, '', ' ', 'a'.repeat(201)]) assert.throws(() => title(value))
@@ -53,7 +54,7 @@ test(
     })
     const db = getDb()
     try {
-      await migrate(db, { migrationsFolder: 'drizzle' })
+      await migrate(db, { migrationsFolder })
       const auth = await getAuth().$context
       const a = await auth.internalAdapter.createUser(
         { name: 'A', email: 'a@example.test', emailVerified: true },

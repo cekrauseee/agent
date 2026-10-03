@@ -16,7 +16,7 @@ test('quality tools reject unused/deprecated code and apply the formatter policy
       )
     }
   }
-  const config = await resolveConfig('app/page.tsx')
+  const config = await resolveConfig('apps/web/app/page.tsx')
   assert.ok(config)
   assert.equal(
     await format('const value = "hello";\n', { ...config, parser: 'typescript' }),

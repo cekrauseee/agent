@@ -1,3 +1,4 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
@@ -6,12 +7,12 @@ import { Pool } from 'pg'
 import { eq, sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { makeSignature } from 'better-auth/crypto'
-import { getAuth } from '../lib/auth'
-import { getDb } from '../lib/db'
-import { messages, paidRequests } from '../lib/db/schema'
-import { getOpenAI } from '../lib/server/openai'
-import { AUDIO_BODY_LIMIT, readAudio, transcribe } from '../lib/transcription'
-import { POST } from '../app/api/transcriptions/route'
+import { getAuth } from '@agent/backend/auth'
+import { getDb } from '@agent/backend/db'
+import { messages, paidRequests } from '@agent/backend/db/schema'
+import { getOpenAI } from '@agent/backend/server/openai'
+import { AUDIO_BODY_LIMIT, readAudio, transcribe } from '@agent/backend/transcription'
+import { POST } from '../apps/web/app/api/transcriptions/route'
 
 const wav = Buffer.alloc(46)
 wav.write('RIFF')
@@ -167,7 +168,7 @@ test(
         : Response.json(malformed ? {} : { text: '  Olá, 日本語!\n', usage: { ignored: true } })
     }
     try {
-      await migrate(db, { migrationsFolder: 'drizzle' })
+      await migrate(db, { migrationsFolder })
       const context = await getAuth().$context
       const owner = await context.internalAdapter.createUser(
         { name: 'Audio', email: 'audio@example.test', emailVerified: true },

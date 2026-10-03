@@ -8,6 +8,7 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}'],
+    settings: { next: { rootDir: './apps/web/' } },
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
@@ -29,10 +30,10 @@ const eslintConfig = defineConfig([
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
-    '.next/**',
-    'out/**',
-    'build/**',
-    'next-env.d.ts',
+    '**/.next/**',
+    '**/out/**',
+    '**/build/**',
+    '**/next-env.d.ts',
   ]),
 ])
 

@@ -1,11 +1,12 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
 import { Pool } from 'pg'
 import { sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import { createDatabase } from '../lib/db'
-import journal from '../drizzle/meta/_journal.json'
+import { createDatabase } from '@agent/backend/db'
+import journal from '../packages/backend/drizzle/meta/_journal.json'
 
 // Opt-in integration check creates and removes its own empty database, never existing tables.
 test(
@@ -25,8 +26,8 @@ test(
     const pool = new Pool({ connectionString: url.href })
     const q = (query: string, values: unknown[] = []) => pool.query(query, values)
     try {
-      await migrate(connection.db, { migrationsFolder: 'drizzle' })
-      await migrate(connection.db, { migrationsFolder: 'drizzle' })
+      await migrate(connection.db, { migrationsFolder })
+      await migrate(connection.db, { migrationsFolder })
       assert.equal(
         (await q('SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations')).rows[0].count,
         journal.entries.length,

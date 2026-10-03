@@ -13,6 +13,6 @@
     "isolatedModules": true,
     "jsx": "react-jsx"
   },
-  "include": ["tests/**/*.ts", "scripts/**/*.mjs", "*.mjs"],
+  "include": ["src/**/*.ts", "drizzle.config.ts"],
   "exclude": ["node_modules"]
 }

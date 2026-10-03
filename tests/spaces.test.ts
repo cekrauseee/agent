@@ -1,17 +1,18 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
 import { Pool } from 'pg'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { makeSignature } from 'better-auth/crypto'
-import { getAuth } from '../lib/auth'
-import { getDb } from '../lib/db'
-import { markdown, MAX_MARKDOWN_BYTES, name } from '../lib/spaces'
-import { GET as directory } from '../app/api/space/route'
-import { POST as createFolder } from '../app/api/folders/route'
-import { POST as createPage } from '../app/api/pages/route'
-import * as folderRoute from '../app/api/folders/[id]/route'
-import * as pageRoute from '../app/api/pages/[id]/route'
+import { getAuth } from '@agent/backend/auth'
+import { getDb } from '@agent/backend/db'
+import { markdown, MAX_MARKDOWN_BYTES, name } from '@agent/backend/spaces'
+import { GET as directory } from '../apps/web/app/api/space/route'
+import { POST as createFolder } from '../apps/web/app/api/folders/route'
+import { POST as createPage } from '../apps/web/app/api/pages/route'
+import * as folderRoute from '../apps/web/app/api/folders/[id]/route'
+import * as pageRoute from '../apps/web/app/api/pages/[id]/route'
 
 test('space name and Markdown boundaries', () => {
   for (const value of [null, '', ' ', '.', '..', 'a/b', 'a\\b', 'a\n', 'a'.repeat(201), '\ud800'])
@@ -44,7 +45,7 @@ test(
       GOOGLE_CLIENT_SECRET: 'fixture',
     })
     try {
-      await migrate(getDb(), { migrationsFolder: 'drizzle' })
+      await migrate(getDb(), { migrationsFolder })
       const auth = await getAuth().$context
       const cookies = await Promise.all(
         ['a', 'b'].map(async (label) => {

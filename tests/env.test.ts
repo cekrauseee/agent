@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { databaseConfig, requiredEnv } from '../lib/server/env'
+import { databaseConfig, requiredEnv } from '@agent/backend/server/env'
 
 test('database driver defaults follow deployment metadata with an explicit override', () => {
   const saved = { ...process.env }

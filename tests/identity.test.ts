@@ -1,3 +1,4 @@
+import { migrationsFolder } from '@agent/backend/db/migrations'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import test from 'node:test'
@@ -13,15 +14,19 @@ import {
   googleProfile,
   requireOwner,
   requireOrigin,
-} from '../lib/auth'
-import { getDb } from '../lib/db'
-import { spaces, user, session } from '../lib/db/schema'
-import { DEFAULT_PREFERENCES, effectivePreferences, validatePreferences } from '../lib/models'
-import { readJson, ApiError } from '../lib/server/http'
-import { GET as me } from '../app/api/me/route'
-import { GET as preferences, PATCH as update } from '../app/api/me/preferences/route'
-import { GET as models } from '../app/api/models/route'
-import { GET as authGET, POST as authPOST } from '../app/api/auth/[...all]/route'
+} from '@agent/backend/auth'
+import { getDb } from '@agent/backend/db'
+import { spaces, user, session } from '@agent/backend/db/schema'
+import {
+  DEFAULT_PREFERENCES,
+  effectivePreferences,
+  validatePreferences,
+} from '@agent/backend/models'
+import { readJson, ApiError } from '@agent/backend/server/http'
+import { GET as me } from '../apps/web/app/api/me/route'
+import { GET as preferences, PATCH as update } from '../apps/web/app/api/me/preferences/route'
+import { GET as models } from '../apps/web/app/api/models/route'
+import { GET as authGET, POST as authPOST } from '../apps/web/app/api/auth/[...all]/route'
 
 test('profile mapping, strict preferences, origins and bounded JSON', async () => {
   assert.deepEqual(googleProfile({ name: 'Single Display Name', email: 'a@example.test' }), {
@@ -131,7 +136,7 @@ test(
     process.env.GOOGLE_CLIENT_SECRET = 'fixture-only'
     const db = getDb()
     try {
-      await migrate(db, { migrationsFolder: 'drizzle' })
+      await migrate(db, { migrationsFolder })
       const auth = getAuth()
       const context = await auth.$context
       process.env.BETTER_AUTH_URL = 'https://app.example.test'
