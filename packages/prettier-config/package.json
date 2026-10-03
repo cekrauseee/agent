@@ -7,19 +7,11 @@
     "./ignore": "./ignore"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "eslint": "^9",
-    "prettier": "3.9.9",
-    "typescript": "^5",
-    "@agent/eslint-config": "workspace:*",
-    "@agent/typescript-config": "workspace:*"
+    "prettier": "3.9.9"
   },
   "scripts": {
     "format": "prettier --write . --ignore-path ignore ../../package.json ../../turbo.json ../../pnpm-workspace.yaml ../../README.md ../../AGENTS.md ../../.github ../../docs",
-    "format:check": "prettier --check . --ignore-path ignore ../../package.json ../../turbo.json ../../pnpm-workspace.yaml ../../README.md ../../AGENTS.md ../../.github ../../docs",
-    "lint": "eslint --max-warnings 0 .",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.ts"
+    "format:check": "prettier --check . --ignore-path ignore ../../package.json ../../turbo.json ../../pnpm-workspace.yaml ../../README.md ../../AGENTS.md ../../.github ../../docs"
   },
   "prettier": "@agent/prettier-config",
   "type": "module"

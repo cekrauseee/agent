@@ -77,4 +77,4 @@ jobs:
       - name: Check project
         uses: ./.github/actions/check-project
         with:
-          project: "@agent/worker"
+          project: "agent-worker"

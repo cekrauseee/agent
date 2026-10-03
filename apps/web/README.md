@@ -1,8 +1,8 @@
 # Web
 
-The Next.js Node application owns HTTP routes, the minimal landing page, components, fonts and
-web-only tooling. Reused domain code comes from `@agent/backend`; this project does not import the
-worker. Read the installed Next.js guide before changing framework behavior.
+The `agent-web` Next.js Node application owns HTTP routes, the minimal landing page, components,
+fonts and web-only tooling. Reused domain code comes from `@agent/backend`; this project does not
+import the worker. Read the installed Next.js guide before changing framework behavior.
 
 ## Development and configuration
 

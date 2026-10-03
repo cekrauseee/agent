@@ -9,7 +9,7 @@ test('shared Node preset compiles native imports and rejects unsafe nullable acc
   try {
     writeFileSync(
       join(directory, 'tsconfig.json'),
-      JSON.stringify({ extends: '../node.json', include: ['input.ts'] }),
+      JSON.stringify({ extends: '@agent/typescript-config/node', include: ['input.ts'] }),
     )
     const file = join(directory, 'input.ts')
     const compiler = resolve('node_modules/typescript/bin/tsc')

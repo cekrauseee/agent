@@ -23,10 +23,10 @@ flowchart LR
 
 The pnpm workspace has two applications and one shared backend:
 
-- [`apps/web`](../../../apps/web) (`@agent/web`) contains the Next.js application, with Node route
+- [`apps/web`](../../../apps/web) (`agent-web`) contains the Next.js application, with Node route
   handlers under [`app/api`](../../../apps/web/app/api). Its landing page is minimal; bundled
   licensed fonts and shadcn components remain available for interface work.
-- [`apps/worker`](../../../apps/worker) (`@agent/worker`) runs the durable generation service. Its
+- [`apps/worker`](../../../apps/worker) (`agent-worker`) runs the durable generation service. Its
   [`run-worker.ts`](../../../apps/worker/src/run-worker.ts) entry owns the process and database
   lifecycle; [`worker.ts`](../../../apps/worker/src/worker.ts) reconciles leased jobs and provider
   progress.

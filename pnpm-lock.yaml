@@ -233,9 +233,6 @@ importers:
 
   packages/eslint-config:
     dependencies:
-      '@agent/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
       eslint-config-next:
         specifier: 16.3.8
         version: 16.3.8(@typescript-eslint/parser@8.71.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
@@ -249,6 +246,9 @@ importers:
       '@agent/prettier-config':
         specifier: workspace:*
         version: link:../prettier-config
+      '@agent/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
       '@types/node':
         specifier: ^20
         version: 20.19.43
@@ -264,24 +264,9 @@ importers:
 
   packages/prettier-config:
     devDependencies:
-      '@agent/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@agent/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      eslint:
-        specifier: ^9
-        version: 9.39.5(jiti@2.7.0)
       prettier:
         specifier: 3.9.9
         version: 3.9.9
-      typescript:
-        specifier: ^5
-        version: 5.9.3
 
   packages/test-utils:
     dependencies:
@@ -325,24 +310,12 @@ importers:
 
   packages/typescript-config:
     devDependencies:
-      '@agent/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
       '@agent/prettier-config':
         specifier: workspace:*
         version: link:../prettier-config
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      eslint:
-        specifier: ^9
-        version: 9.39.5(jiti@2.7.0)
       prettier:
         specifier: 3.9.9
         version: 3.9.9
-      typescript:
-        specifier: ^5
-        version: 5.9.3
 
 packages:
 

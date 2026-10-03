@@ -10,7 +10,8 @@ workspace's generic manifests, README/instructions, global documentation and Git
 projects format their own trees. `pnpm format` writes; `pnpm format:check` verifies without
 modifying files.
 
-Run formatting, lint, typecheck and tests here. The regression resolves the exported config through
-Prettier and formats a TypeScript fixture. The
-[Prettier workflow](../../.github/workflows/prettier-config.yml) checks this project and its
-declared configuration dependencies. Consumers inherit the same policy without copying it.
+Run formatting here. This declarative package has no workspace dependencies. Its regression lives in
+the [ESLint consumer](../eslint-config/README.md), where Prettier resolves the exported config and
+formats a TypeScript fixture. The [Prettier workflow](../../.github/workflows/prettier-config.yml)
+checks the configuration consumer and its dependencies, including lint, types and all three policy
+regressions. Consumers inherit the same policy without copying it.

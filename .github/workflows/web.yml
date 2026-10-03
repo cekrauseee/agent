@@ -78,6 +78,6 @@ jobs:
       - name: Check project
         uses: ./.github/actions/check-project
         with:
-          project: "@agent/web"
+          project: "agent-web"
       - name: Production build
-        run: pnpm --filter @agent/web build
+        run: pnpm --filter agent-web build

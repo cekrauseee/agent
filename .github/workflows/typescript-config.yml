@@ -55,4 +55,4 @@ jobs:
       - name: Check project
         uses: ./.github/actions/check-project
         with:
-          project: "@agent/typescript-config"
+          project: "@agent/eslint-config..."

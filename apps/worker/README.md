@@ -1,7 +1,7 @@
 # Generation worker
 
-This independent long-running Node service executes durable generation jobs and provider cleanup. It
-imports shared backend domains and does not depend on Next.js or web source. Its entrypoint and
+The `agent-worker` long-running Node service executes durable generation jobs and provider cleanup.
+It imports shared backend domains and does not depend on Next.js or web source. Its entrypoint and
 execution code live in `src/`; recovery and provider limits are in [execution](docs/execution.md).
 
 ## Run and configure

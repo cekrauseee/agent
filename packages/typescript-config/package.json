@@ -8,19 +8,12 @@
     "./next": "./next.json"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "eslint": "^9",
     "prettier": "3.9.9",
-    "typescript": "^5",
-    "@agent/eslint-config": "workspace:*",
     "@agent/prettier-config": "workspace:*"
   },
   "scripts": {
     "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
-    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
-    "lint": "eslint --max-warnings 0 .",
-    "typecheck": "tsc --noEmit",
-    "test": "node --test tests/*.test.ts"
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore"
   },
   "prettier": "@agent/prettier-config",
   "type": "module"
