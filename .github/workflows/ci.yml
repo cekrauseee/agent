@@ -56,3 +56,11 @@ jobs:
         run: pnpm typecheck
       - name: Backend tests
         run: pnpm test:backend
+      - name: Production build
+        run: pnpm build
+      - name: Schema drift check
+        run: |
+          pnpm db:generate
+          test -z "$(git status --porcelain -- packages/backend/drizzle)"
+      - name: Compose configuration
+        run: docker compose config --quiet
