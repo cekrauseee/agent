@@ -1,0 +1,11 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "setup": {
+      "dependsOn": ["@agent/backend#setup"]
+    },
+    "dev": {
+      "passThroughEnv": ["DATABASE_*", "OPENAI_*", "VERCEL_ENV"]
+    }
+  }
+}

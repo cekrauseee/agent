@@ -1,5 +1,0 @@
-{
-  "include": ["tests/**/*.ts", "scripts/**/*.mjs", "*.mjs", "packages/*-config/**/*.mjs"],
-  "exclude": ["node_modules"],
-  "extends": "@agent/typescript-config/node"
-}

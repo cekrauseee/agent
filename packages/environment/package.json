@@ -1,0 +1,25 @@
+{
+  "name": "@agent/environment",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.mjs",
+  "scripts": {
+    "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "lint": "eslint --max-warnings 0 .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts"
+  },
+  "prettier": "@agent/prettier-config",
+  "devDependencies": {
+    "@agent/eslint-config": "workspace:*",
+    "@agent/prettier-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "@types/node": "^20",
+    "eslint": "^9",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript": "^5"
+  }
+}

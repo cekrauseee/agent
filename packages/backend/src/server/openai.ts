@@ -1,6 +1,7 @@
 import 'server-only'
 import { randomUUID } from 'node:crypto'
 import OpenAI from 'openai'
+export { OpenAI }
 import { and, count, eq, gt, lt, sql } from 'drizzle-orm'
 import { getDb, type Database, type Transaction } from '../db'
 import { paidRequests } from '../db/schema'

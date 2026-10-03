@@ -16,13 +16,18 @@
     "./server/http": "./src/server/http.ts",
     "./server/openai": "./src/server/openai.ts",
     "./spaces": "./src/spaces/index.ts",
-    "./transcription": "./src/transcription.ts"
+    "./transcription": "./src/transcription.ts",
+    "./development": "./src/development.mjs"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=../../.env --conditions=react-server --import tsx src/db/migrate.ts",
-    "lint": "eslint --max-warnings 0 ."
+    "db:migrate": "node --env-file-if-exists=.env --conditions=react-server --import tsx src/db/migrate.ts",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "setup": "node scripts/setup.mjs"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "1.7.7",
@@ -41,6 +46,13 @@
     "typescript": "^5",
     "@agent/eslint-config": "workspace:*",
     "@agent/typescript-config": "workspace:*",
-    "eslint": "^9"
+    "eslint": "^9",
+    "@agent/prettier-config": "workspace:*",
+    "prettier": "3.9.9",
+    "@agent/environment": "workspace:*"
+  },
+  "prettier": "@agent/prettier-config",
+  "bin": {
+    "agent-app-env": "./scripts/setup-app-env.mjs"
   }
 }

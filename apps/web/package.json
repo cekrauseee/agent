@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node --import ../../scripts/web-env.mjs ./node_modules/next/dist/bin/next dev",
-    "build": "node --import ../../scripts/web-env.mjs ./node_modules/next/dist/bin/next build",
-    "start": "node --import ../../scripts/web-env.mjs ./node_modules/next/dist/bin/next start",
-    "typecheck": "node --import ../../scripts/web-env.mjs ./node_modules/next/dist/bin/next typegen && tsc --noEmit",
-    "lint": "eslint --max-warnings 0 ."
+    "dev": "node --import ./scripts/web-env.mjs ./node_modules/next/dist/bin/next dev",
+    "build": "node --import ./scripts/web-env.mjs ./node_modules/next/dist/bin/next build",
+    "start": "node --import ./scripts/web-env.mjs ./node_modules/next/dist/bin/next start",
+    "typecheck": "node --import ./scripts/web-env.mjs ./node_modules/next/dist/bin/next typegen && tsc --noEmit",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "setup": "agent-app-env"
   },
   "dependencies": {
     "@agent/backend": "workspace:*",
@@ -32,6 +36,13 @@
     "typescript": "^5",
     "@agent/eslint-config": "workspace:*",
     "@agent/typescript-config": "workspace:*",
-    "eslint": "^9"
-  }
+    "eslint": "^9",
+    "@agent/prettier-config": "workspace:*",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "@agent/test-utils": "workspace:*",
+    "pg": "8.23.1",
+    "@types/pg": "8.23.1"
+  },
+  "prettier": "@agent/prettier-config"
 }

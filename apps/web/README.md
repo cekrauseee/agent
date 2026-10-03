@@ -1,0 +1,59 @@
+# Web
+
+The Next.js Node application owns HTTP routes, the minimal landing page, components, fonts and
+web-only tooling. Reused domain code comes from `@agent/backend`; this project does not import the
+worker. Read the installed Next.js guide before changing framework behavior.
+
+## Development and configuration
+
+Run commands from `apps/web`, after installing the workspace dependencies. Prepare the local
+database with `pnpm --filter @agent/backend setup`, then:
+
+```sh
+pnpm setup
+pnpm dev
+```
+
+Setup normalizes this project's `.env` using `.env.example`. For initial database defaults only, it
+reads the backend's local configuration. Existing app values are preserved. The file is replaced
+atomically with mode 0600; raw quoting stays intact and `$NAME` references remain literal. The
+shared environment package generates a missing local Better Auth session secret and refuses to
+replace a short existing secret. External credentials remain blank until supplied.
+
+Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BETTER_AUTH_SECRET` and `OPENAI_API_KEY` in
+`apps/web/.env`. `APP_PORT` defaults to 3000. Keep `BETTER_AUTH_URL` and Google's callback
+`http://localhost:3000/api/auth/callback/google` consistent with that port. Use the same database as
+the worker. The Next preload reads only this project's env file and sets the port before Next
+starts. Exported variables take precedence. Builds and process health require no service secrets.
+
+`pnpm dev` from the workspace root starts both applications in one terminal. Run the worker for
+admitted generations to progress. Neither application is built or served in Docker.
+
+## Documentation
+
+- [API contracts](docs/api.md): requests, responses, errors and SSE.
+- [Authentication and preferences](docs/auth.md): Google, sessions and model settings.
+- [Conversation routes](docs/conversations.md), [history](docs/organization.md),
+  [private pages](docs/spaces.md) and [transcription](docs/transcription.md).
+- [Backend architecture](../../packages/backend/docs/architecture.md) and
+  [worker execution](../worker/docs/execution.md) describe their owned internals.
+
+## Verification and CI
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm typecheck
+TEST_DATABASE_URL=<local-admin-url> pnpm test
+pnpm build
+```
+
+Tests in `tests/` exercise actual route handlers, signed sessions and persisted SSE data.
+Transcription uses controlled SDK transports; generation route tests seed saved worker outcomes
+through the shared schema. Database tests create/drop only isolated local databases. Without
+`TEST_DATABASE_URL` they are skipped. Live OAuth/provider behavior remains separate.
+
+The [web workflow](../../.github/workflows/web.yml) runs only for web or declared dependency
+changes, including shared config and workspace tooling. It supplies a disposable PostgreSQL database
+and runs these checks, including the production build, on pinned Node 24. Style/compiler presets
+come from the three declared configuration packages.
