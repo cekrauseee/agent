@@ -1,0 +1,12 @@
+{
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.mjs",
+    "scripts/**/*.mjs",
+    "tests/**/*.ts",
+    "*.mjs",
+    "drizzle.config.ts"
+  ],
+  "exclude": ["node_modules"],
+  "extends": "@agent/typescript-config/node"
+}

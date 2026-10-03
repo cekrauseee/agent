@@ -1,26 +1,16 @@
-<!-- prettier-ignore-start -->
+# Workspace conventions
 
-<!-- BEGIN:nextjs-agent-rules -->
+Use pnpm and the committed lockfile. The root coordinates the workspace and owns global documentation/shared env defaults. Application
+source, tests, scripts, specific guides and env overrides belong to their owning project. Link to
+global guides rather than copying shared rules. Reusable code and
+configuration must be exported by a declared workspace package. Do not import another app's source.
 
-# This is NOT the Next.js you know
+Read the relevant project README and AGENTS instructions before changing behavior. Preserve public
+contracts, secrets and unrelated changes. Run the affected project's format check, tests,
+typecheck, lint and build when present; root scripts coordinate those project tasks. Database
+checks require TEST_DATABASE_URL and may create/drop only isolated temporary local databases.
+Shared formatting, compiler and lint policies live in their configuration packages.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
-
-<!-- prettier-ignore-end -->
-
-## Repository conventions
-
-Use pnpm and the committed lockfile. The backend runs in the Node runtime with a separate durable
-generation worker; never place service secrets in client code. Derive ownership from the Better Auth
-session and reuse the bounded private API helpers. Apply reviewed Drizzle migrations rather than
-pushing the schema directly.
-
-See [README](README.md), [architecture](docs/architecture.md), [API contracts](docs/api.md) and
-[CI/code style](docs/ci.md) before changing behavior. Run format check, the relevant backend checks,
-typecheck, lint and build; database checks require `TEST_DATABASE_URL` and must use isolated
-temporary databases. Apply Prettier with `pnpm format`; unused/deprecated references are lint
-errors. Live provider calls and production operations need explicit authorization.
+Workflows are project-specific and include declared shared dependencies in their path filters.
+Update the affected filters if workspace dependencies change. Live provider calls and production
+operations require explicit authorization.

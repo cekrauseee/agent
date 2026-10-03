@@ -1,0 +1,36 @@
+{
+  "name": "agent-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --import @agent/environment/register --conditions=react-server --import tsx --watch src/run-worker.ts",
+    "start": "node --import @agent/environment/register --conditions=react-server --import tsx src/run-worker.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "setup": "agent-env"
+  },
+  "dependencies": {
+    "@agent/backend": "workspace:*",
+    "drizzle-orm": "0.45.3",
+    "openai": "7.27.0",
+    "server-only": "0.0.1",
+    "tsx": "4.23.15",
+    "@agent/environment": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5",
+    "@agent/eslint-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "eslint": "^9",
+    "@agent/prettier-config": "workspace:*",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "@agent/test-utils": "workspace:*"
+  },
+  "prettier": "@agent/prettier-config"
+}

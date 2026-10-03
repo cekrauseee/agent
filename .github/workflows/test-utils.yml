@@ -1,0 +1,78 @@
+name: Test-Utils CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".env.example"
+      - "docs/**"
+      - "README.md"
+      - ".github/actions/check-project/**"
+      - ".github/workflows/test-utils.yml"
+      - ".node-version"
+      - "package.json"
+      - "packages/backend/**"
+      - "packages/environment/**"
+      - "packages/eslint-config/**"
+      - "packages/prettier-config/**"
+      - "packages/test-utils/**"
+      - "packages/typescript-config/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  push:
+    branches: [main]
+    paths:
+      - ".env.example"
+      - "docs/**"
+      - "README.md"
+      - ".github/actions/check-project/**"
+      - ".github/workflows/test-utils.yml"
+      - ".node-version"
+      - "package.json"
+      - "packages/backend/**"
+      - "packages/environment/**"
+      - "packages/eslint-config/**"
+      - "packages/prettier-config/**"
+      - "packages/test-utils/**"
+      - "packages/typescript-config/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-utils-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Test-Utils checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.11-bookworm
+        env:
+          POSTGRES_USER: agent
+          POSTGRES_PASSWORD: agent-local
+          POSTGRES_DB: agent
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agent -d agent" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://agent:agent-local@localhost:5432/agent
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check project
+        uses: ./.github/actions/check-project
+        with:
+          project: "@agent/test-utils"

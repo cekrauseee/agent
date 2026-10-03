@@ -1,0 +1,5 @@
+{
+  "include": ["src/**/*.ts", "src/**/*.mjs", "scripts/**/*.mjs", "tests/**/*.ts", "*.mjs"],
+  "exclude": ["node_modules"],
+  "extends": "@agent/typescript-config/node"
+}

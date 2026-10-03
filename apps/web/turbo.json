@@ -1,0 +1,27 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "setup": {
+      "dependsOn": ["@agent/backend#setup"]
+    },
+    "dev": {
+      "passThroughEnv": [
+        "APP_PORT",
+        "PORT",
+        "DATABASE_*",
+        "BETTER_AUTH_*",
+        "GOOGLE_*",
+        "OPENAI_*",
+        "VERCEL_ENV"
+      ]
+    },
+    "build": {
+      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["NEXT_PUBLIC_*", "NEXT_TELEMETRY_DISABLED", "VERCEL_ENV", "NODE_ENV"]
+    },
+    "typecheck": {
+      "outputs": [".next/types/**", "next-env.d.ts", "*.tsbuildinfo"]
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "@agent/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./agent": "./src/agent/index.ts",
+    "./agent/stream": "./src/agent/stream.ts",
+    "./auth": "./src/auth/index.ts",
+    "./db": "./src/db/index.ts",
+    "./db/schema": "./src/db/schema.ts",
+    "./db/migrations": "./src/db/migrations.ts",
+    "./models": "./src/models.ts",
+    "./organization": "./src/organization/index.ts",
+    "./server/env": "./src/server/env.ts",
+    "./server/http": "./src/server/http.ts",
+    "./server/openai": "./src/server/openai.ts",
+    "./spaces": "./src/spaces/index.ts",
+    "./transcription": "./src/transcription.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --import @agent/environment/register --conditions=react-server --import tsx src/db/migrate.ts",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "format:check": "prettier --check . --ignore-path node_modules/@agent/prettier-config/ignore",
+    "test": "node --conditions=react-server --import tsx --test tests/*.test.ts",
+    "setup": "node scripts/setup.mjs"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.7",
+    "@neondatabase/serverless": "1.2.0",
+    "better-auth": "1.7.7",
+    "drizzle-orm": "0.45.3",
+    "openai": "7.27.0",
+    "pg": "8.23.1",
+    "server-only": "0.0.1",
+    "@agent/environment": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "^5",
+    "@agent/eslint-config": "workspace:*",
+    "@agent/typescript-config": "workspace:*",
+    "eslint": "^9",
+    "@agent/prettier-config": "workspace:*",
+    "prettier": "3.9.9"
+  },
+  "prettier": "@agent/prettier-config"
+}
